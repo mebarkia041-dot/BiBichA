@@ -120,6 +120,35 @@ class MainActivity : Activity() {
             }
         }
 
+        val memoryTitle = TextView(this).apply {
+            text = "الذاكرة الدائمة المشفّرة"
+            textSize = 20f
+            setPadding(8, 20, 8, 8)
+        }
+        val memoryInput = EditText(this).apply {
+            hint = "مثلاً: أفضل الردود بالدارجة الجزائرية"
+            minLines = 2
+        }
+        val saveMemory = Button(this).apply {
+            text = "احفظ المعلومة في ذاكرة بيبيشا"
+            setOnClickListener {
+                try {
+                    SecureConfig.addMemory(this@MainActivity, memoryInput.text.toString())
+                    memoryInput.text?.clear()
+                    Toast.makeText(this@MainActivity, "تحفظت المعلومة بأمان.", Toast.LENGTH_LONG).show()
+                } catch (error: Exception) {
+                    Toast.makeText(this@MainActivity, error.message ?: "تعذر حفظ المعلومة.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        val clearMemory = Button(this).apply {
+            text = "مسح الذاكرة الدائمة"
+            setOnClickListener {
+                SecureConfig.clearMemories(this@MainActivity)
+                Toast.makeText(this@MainActivity, "تم مسح الذاكرة الدائمة.", Toast.LENGTH_LONG).show()
+            }
+        }
+
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(20, 16, 20, 24)
@@ -138,6 +167,10 @@ class MainActivity : Activity() {
             addView(token)
             addView(saveConfig)
             addView(clearHistory)
+            addView(memoryTitle)
+            addView(memoryInput)
+            addView(saveMemory)
+            addView(clearMemory)
         }
         setContentView(ScrollView(this).apply { addView(content) })
         if (intent.getBooleanExtra(EXTRA_EMERGENCY_SHARE, false)) requestEmergencyLocation()

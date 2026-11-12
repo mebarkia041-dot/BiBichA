@@ -235,7 +235,7 @@ test("native Android requests with the mobile token can use the AI endpoint", as
 });
 
 
-test("web app inline JavaScript parses without syntax errors", () => {
+test("web app and service worker JavaScript parse and normalize the Worker URL", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
   const start = html.indexOf("<script>");
   const end = html.indexOf("</script>", start);
@@ -243,4 +243,18 @@ test("web app inline JavaScript parses without syntax errors", () => {
   const sourceStart = html.indexOf(">", start) + 1;
   const source = html.slice(sourceStart, end);
   assert.doesNotThrow(() => new vm.Script(source, { filename: "index.html" }));
+
+  const apiStart = source.indexOf("function apiBase()");
+  const apiEnd = source.indexOf("function chatEndpoint()", apiStart);
+  assert.ok(apiStart >= 0 && apiEnd > apiStart, "expected apiBase helper");
+  const apiBaseCode = source.slice(apiStart, apiEnd) + "; apiBase();";
+  const normalized = vm.runInNewContext(apiBaseCode, {
+    window: { BIBICHA_API_URL: "https://bibicha-ai.workers.dev/chat/" }
+  });
+  assert.equal(normalized, "https://bibicha-ai.workers.dev");
+
+  const serviceWorker = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
+  assert.doesNotThrow(() => new vm.Script(serviceWorker, { filename: "sw.js" }));
+  const apiConfig = readFileSync(new URL("../api-config.js", import.meta.url), "utf8");
+  assert.doesNotThrow(() => new vm.Script(apiConfig, { filename: "api-config.js" }));
 });

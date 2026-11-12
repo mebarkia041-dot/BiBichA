@@ -27,7 +27,7 @@ object SecureConfig {
         require(normalizedUrl.startsWith("https://") && normalizedUrl.endsWith(".workers.dev")) {
             "أدخل رابط Cloudflare Worker الصحيح الذي يبدأ بـ https:// وينتهي بـ .workers.dev"
         }
-        require(token.trim().length >= 24) { "رمز الربط يجب أن يكون أطول من 24 حرفاً." }
+        require(token.trim().length >= 32) { "رمز الربط يجب أن يكون 32 حرفاً على الأقل." }
         val encrypted = encrypt(token.trim())
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(URL_KEY, normalizedUrl)

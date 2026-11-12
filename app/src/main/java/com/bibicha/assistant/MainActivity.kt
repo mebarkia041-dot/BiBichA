@@ -234,6 +234,33 @@ class MainActivity : Activity() {
             }
         }
 
+
+        val exportBackup = Button(this).apply {
+            text = "حفظ نسخة احتياطية لإميليا في الهاتف"
+            setOnClickListener {
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("حفظ نسخة احتياطية")
+                    .setMessage("النسخة تحتوي على الذاكرة والمحادثات وإعدادات الربط. احتفظ بها في مكان خاص ولا تشاركها.")
+                    .setNegativeButton("إلغاء", null)
+                    .setPositiveButton("متابعة") { _, _ ->
+                        startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                            type = "application/json"
+                            putExtra(Intent.EXTRA_TITLE, "Emilia-Backup.json")
+                        }, REQUEST_EXPORT_BACKUP)
+                    }.show()
+            }
+        }
+        val importBackup = Button(this).apply {
+            text = "استرجاع نسخة إميليا من الهاتف"
+            setOnClickListener {
+                startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/json"
+                }, REQUEST_IMPORT_BACKUP)
+            }
+        }
+
         val chatTitle = TextView(this).apply {
             text = "محادثة إميليا 💜"
             textSize = 22f
@@ -317,6 +344,8 @@ class MainActivity : Activity() {
             addView(saveMemory)
             addView(viewMemory)
             addView(clearMemory)
+            addView(exportBackup)
+            addView(importBackup)
         }
         setContentView(ScrollView(this).apply { addView(content) })
         if (intent.getBooleanExtra(EXTRA_EMERGENCY_SHARE, false)) requestEmergencyLocation()
@@ -803,6 +832,34 @@ class MainActivity : Activity() {
     @Deprecated("Android role result callback")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQUEST_EXPORT_BACKUP && resultCode == RESULT_OK) {
+            val uri = data?.data
+            if (uri != null) {
+                try {
+                    contentResolver.openOutputStream(uri)?.bufferedWriter(Charsets.UTF_8)?.use {
+                        it.write(SecureConfig.exportBackup(this))
+                    } ?: throw IllegalStateException("تعذر فتح ملف النسخة للحفظ.")
+                    Toast.makeText(this, "تحفظت النسخة الاحتياطية بنجاح 💜", Toast.LENGTH_LONG).show()
+                } catch (error: Exception) {
+                    Toast.makeText(this, error.message ?: "تعذر حفظ النسخة.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        if (requestCode == REQUEST_IMPORT_BACKUP && resultCode == RESULT_OK) {
+            val uri = data?.data
+            if (uri != null) {
+                try {
+                    val backup = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                        ?: throw IllegalStateException("تعذر قراءة ملف النسخة.")
+                    SecureConfig.importBackup(this, backup)
+                    Toast.makeText(this, "استرجعت إميليا الذاكرة والإعدادات بنجاح. 💜", Toast.LENGTH_LONG).show()
+                    recreate()
+                } catch (error: Exception) {
+                    Toast.makeText(this, error.message ?: "تعذر استرجاع النسخة.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
         if (requestCode == REQUEST_VOICE_CHAT) {
             if (resultCode == RESULT_OK) {
                 val spoken = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim().orEmpty()
@@ -830,5 +887,5 @@ class MainActivity : Activity() {
         }
     }
 
-    companion object { private const val REQUEST_ASSISTANT = 41; private const val REQUEST_CALL_SCREENING = 43; private const val REQUEST_LOCATION = 44; private const val REQUEST_VOICE_CHAT = 45; private const val REQUEST_MICROPHONE = 46; private const val REQUEST_NOTIFICATIONS = 47; const val EXTRA_EMERGENCY_SHARE = "bibicha_emergency_share" }
+    companion object { private const val REQUEST_ASSISTANT = 41; private const val REQUEST_CALL_SCREENING = 43; private const val REQUEST_LOCATION = 44; private const val REQUEST_VOICE_CHAT = 45; private const val REQUEST_MICROPHONE = 46; private const val REQUEST_NOTIFICATIONS = 47; const val EXTRA_EMERGENCY_SHARE = "bibicha_emergency_share"; private const val REQUEST_EXPORT_BACKUP = 48; private const val REQUEST_IMPORT_BACKUP = 49 }
 }

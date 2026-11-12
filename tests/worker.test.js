@@ -201,3 +201,33 @@ test("preflight from an unapproved origin is rejected", async () => {
   }), env());
   assert.equal(response.status, 403);
 });
+
+
+test("native Android requests require the configured bearer token", async () => {
+  const response = await worker.fetch(request("/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "سلام" })
+  }), env());
+  assert.equal(response.status, 401);
+});
+
+test("native Android requests with the mobile token can use the AI endpoint", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ output_text: "أهلا بيك" });
+  try {
+    const response = await worker.fetch(request("/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer mobile-test-token"
+      },
+      body: JSON.stringify({ message: "سلام" })
+    }), env({ MOBILE_APP_TOKEN: "mobile-test-token" }));
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { reply: "أهلا بيك" });
+    assert.equal(response.headers.get("Access-Control-Allow-Origin"), null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

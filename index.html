@@ -22,7 +22,7 @@ button{border:0;border-radius:24px;padding:0 16px;background:#8b5cf6;color:#fff;
 </style></head>
 <body><main class="app">
 <header><h1>💜 BiBichA</h1><p>بيبيشا • سارة • وحيدتي</p></header>
-<div class="toolbar"><button type="button" id="install" hidden>📲 تثبيت بيبيشا</button><button type="button" id="voice">🎙️ تحدث</button><button type="button" id="speak">🔊 قراءة الرد</button><button type="button" id="autoVoice">🔈 الصوت التلقائي: متوقف</button><button type="button" id="memoryBtn">🧠 الذاكرة</button><button type="button" id="clear">مسح المحادثة</button></div>
+<div class="toolbar"><button type="button" id="install" hidden>📲 تثبيت بيبيشا</button><button type="button" id="voice">🎙️ تحدث</button><button type="button" id="speak">🔊 قراءة الرد</button><button type="button" id="autoVoice">🔈 الصوت التلقائي: متوقف</button><button type="button" id="memoryBtn">🧠 الذاكرة</button><button type="button" id="backup">💾 نسخة احتياطية</button><button type="button" id="restore">📥 استرجاع</button><input id="restoreFile" type="file" accept="application/json,.json" hidden><button type="button" id="clear">مسح المحادثة</button></div>
 <section id="messages" aria-live="polite"></section>
 <form id="chat"><input id="entry" placeholder="اكتب رسالتك هنا..." autocomplete="off" required><button type="submit">إرسال</button></form>
 <div id="connection" role="status">حالة الاتصال: جاري الفحص...</div>\n<div class="note">تحفظ المحادثة على هذا الهاتف. دون إعداد الخادم الآمن، تعمل بيبيشا بالردود التجريبية؛ بعد ربط الخادم تتحدث معك بالذكاء الاصطناعي عبر الإنترنت.</div>
@@ -90,6 +90,30 @@ document.getElementById('memoryBtn').addEventListener('click',()=>{
  const facts=memory.facts.length?memory.facts.map((x,i)=>(i+1)+'. '+x).join('\\n'):'مازال ما حفظتش حتى معلومة.';
  const action=confirm('ذاكرة بيبيشا (محفوظة على هذا الهاتف):\\n\\n'+facts+'\\n\\nاضغط موافق لمسح الذاكرة كاملة، أو إلغاء للاحتفاظ بها.');
  if(action){memory={facts:[]};saveMemory();add('bot','مسحت الذاكرة المحفوظة من هذا الهاتف.');}
+});
+document.getElementById('backup').addEventListener('click',()=>{
+ const data={app:'BiBichA',version:1,exportedAt:new Date().toISOString(),history,memory};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');
+ a.href=url;a.download='bibicha-backup-'+new Date().toISOString().slice(0,10)+'.json';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ add('bot','حضّرتلك نسخة احتياطية من المحادثة والذاكرة. احتفظ بالملف في مكان آمن ❤️');
+});
+const restoreFile=document.getElementById('restoreFile');
+document.getElementById('restore').addEventListener('click',()=>restoreFile.click());
+restoreFile.addEventListener('change',async()=>{
+ const file=restoreFile.files&&restoreFile.files[0];if(!file)return;
+ try{
+  if(file.size>2*1024*1024)throw new Error('الملف كبير بزاف.');
+  const data=JSON.parse(await file.text());
+  if(data.app!=='BiBichA'||!Array.isArray(data.history)||!data.memory||!Array.isArray(data.memory.facts))throw new Error('هذا الملف ماشي نسخة احتياطية صالحة لبيبيشا.');
+  history=data.history.filter(x=>x&&['user','bot'].includes(x.role)&&typeof x.text==='string').slice(-100);
+  memory={facts:data.memory.facts.filter(x=>typeof x==='string').slice(-30)};
+  localStorage.setItem('bibicha-chat',JSON.stringify(history));
+  saveMemory();box.innerHTML='';history.forEach(x=>add(x.role,x.text,false));
+  add('bot','تم استرجاع النسخة الاحتياطية بنجاح ❤️');
+ }catch(err){add('bot',err.message||'تعذر استرجاع النسخة.');}
+ finally{restoreFile.value='';}
 });
 document.getElementById('speak').addEventListener('click',()=>{const last=[...box.querySelectorAll('.bot')].pop();if(last)say(last.textContent);});
 document.getElementById('voice').addEventListener('click',()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){add('bot','التعرف على الصوت غير مدعوم في هذا المتصفح. استعمل الكتابة حالياً.');return;}const r=new SR();r.lang='ar-DZ';r.onresult=e=>{entry.value=e.results[0][0].transcript;form.requestSubmit();};r.onerror=()=>add('bot','ما قدرتش نسمعك. جرّب مرة أخرى أو اكتب رسالتك.');r.start();});

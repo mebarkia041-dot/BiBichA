@@ -140,6 +140,7 @@ class MainActivity : Activity() {
             addView(clearHistory)
         }
         setContentView(ScrollView(this).apply { addView(content) })
+        if (intent.getBooleanExtra(EXTRA_EMERGENCY_SHARE, false)) requestEmergencyLocation()
     }
 
     private fun requestEmergencyLocation() {
@@ -172,8 +173,11 @@ class MainActivity : Activity() {
             return
         }
 
+        val timeoutHandler = Handler(Looper.getMainLooper())
+        var timeoutAction: Runnable? = null
         val listener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
+                timeoutAction?.let { timeoutHandler.removeCallbacks(it) }
                 try { manager.removeUpdates(this) } catch (_: Exception) {}
                 prepareEmergencyMessage(location)
             }
@@ -192,10 +196,11 @@ class MainActivity : Activity() {
             } catch (_: Exception) {}
         }
         if (requested) {
-            Handler(Looper.getMainLooper()).postDelayed({
+            timeoutAction = Runnable {
                 try { manager.removeUpdates(listener) } catch (_: Exception) {}
                 Toast.makeText(this, "ما قدرناش نحددو موقعك. فعّل GPS وعاود.", Toast.LENGTH_LONG).show()
-            }, 20_000L)
+            }
+            timeoutHandler.postDelayed(timeoutAction!!, 20_000L)
         } else {
             Toast.makeText(this, "فعّل GPS أو خدمة الموقع ثم عاود.", Toast.LENGTH_LONG).show()
         }
@@ -282,5 +287,5 @@ class MainActivity : Activity() {
         }
     }
 
-    companion object { private const val REQUEST_ASSISTANT = 41; private const val REQUEST_CALL_SCREENING = 43; private const val REQUEST_LOCATION = 44 }
+    companion object { private const val REQUEST_ASSISTANT = 41; private const val REQUEST_CALL_SCREENING = 43; private const val REQUEST_LOCATION = 44; const val EXTRA_EMERGENCY_SHARE = "bibicha_emergency_share" }
 }

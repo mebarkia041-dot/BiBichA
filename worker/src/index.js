@@ -22,7 +22,7 @@ export default {
         : {};
       return Response.json(
         { service: "BiBichA AI", configured: Boolean(env.OPENAI_API_KEY) },
-        { headers: healthHeaders }
+        { headers: { ...healthHeaders, "Cache-Control": "no-store" } }
       );
     }
 

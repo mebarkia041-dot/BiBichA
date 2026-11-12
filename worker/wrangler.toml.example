@@ -1,0 +1,7 @@
+name = "bibicha-ai"
+main = "src/index.js"
+compatibility_date = "2026-11-12"
+
+[vars]
+ALLOWED_ORIGIN = "https://mebarkia041-dot.github.io"
+OPENAI_MODEL = "gpt-4.1-mini"

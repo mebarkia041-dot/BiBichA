@@ -20,6 +20,7 @@ object SecureConfig {
     private const val HISTORY_KEY = "conversation_history_encrypted"
     private const val MEMORY_KEY = "personal_memory_encrypted"
     private const val EMERGENCY_NUMBER_KEY = "emergency_number_encrypted"
+    private const val NOTIFICATION_READING_KEY = "notification_reading_enabled"
 
     fun save(context: Context, workerUrl: String, token: String) {
         val normalizedUrl = workerUrl.trim().trimEnd('/')
@@ -86,6 +87,16 @@ object SecureConfig {
 
     fun clearMemories(context: Context) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(MEMORY_KEY).apply()
+    }
+
+    fun notificationReadingEnabled(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getBoolean(NOTIFICATION_READING_KEY, false)
+
+    fun setNotificationReadingEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putBoolean(NOTIFICATION_READING_KEY, enabled)
+            .apply()
     }
 
     fun saveEmergencyNumber(context: Context, number: String) {

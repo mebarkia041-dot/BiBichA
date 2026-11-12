@@ -405,11 +405,47 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun offlineReply(message: String): String {
+        val q = message.lowercase(Locale.ROOT)
+        return when {
+            listOf("سلام", "مرحبا", "bonjour", "salam").any { q.contains(it) } ->
+                "وعليكم السلام ❤️ أنا إميليا، راني هنا معاك. واش نقدر نعاونك اليوم؟"
+            listOf("اسمك", "شكون", "من انت").any { q.contains(it) } ->
+                "أنا إميليا، مساعدتك الشخصية 💜 نخدم بالوظائف المحلية المجانية، وقدرات المحادثة هنا محدودة دون نموذج سحابي."
+            listOf("شكرا", "merci").any { q.contains(it) } -> "بلا مزية ❤️ ديما هنا باش نعاونك."
+            listOf("كيف حالك", "واش راكي").any { q.contains(it) } -> "لاباس، شكراً على سؤالك 😊 قوليلي واش حاب نديرو اليوم؟"
+            listOf("نصيحة", "قلقان", "حزين", "تعبان").any { q.contains(it) } ->
+                "نسمعلك ❤️ خذ نفس عميق، وقسّم اللي مقلقك لخطوة صغيرة. إذا تحب احكيلي واش صرا ونرتبوها مع بعض."
+            listOf("خطة", "نظم", "مهام", "برنامج").any { q.contains(it) } ->
+                "نقدرو ننظموها: 1) حدّد الهدف. 2) اختار أهم 3 مهام. 3) ابدأ بأصغر خطوة. 4) راجع واش كملت. اكتبلي الهدف ونحضّرلك خطة."
+            listOf("طقس", "مطر", "رياح").any { q.contains(it) } ->
+                "الطقس الحي يحتاج إنترنت ومصدر محدث. إذا تبعثلي التوقعات اللي تظهرلك نفسرهالك."
+            else ->
+                "وصلتني رسالتك ❤️ نقدر نعاونك في التنظيم والتخطيط وصياغة الرسائل والنصائح البسيطة. هذي النسخة المحلية المجانية ما تستعملش نموذج ذكاء اصطناعي سحابي، لذلك قدراتها محدودة وما نعطيكش معلومة غير متحققة على أنها مؤكدة."
+        }
+    }
+
     private fun sendChatMessage(message: String, chatLog: TextView, chatStatus: TextView, sendButton: Button) {
         val worker = SecureConfig.workerUrl(this)
         val token = try { SecureConfig.token(this) } catch (_: Exception) { "" }
         if (worker.isBlank() || token.isBlank()) {
-            chatStatus.text = "أكمل إعداد رابط Worker ورمز Android أولاً."
+            val reply = offlineReply(message)
+            SecureConfig.addHistory(this, "user", message)
+            SecureConfig.addHistory(this, "assistant", reply)
+            val history = SecureConfig.history(this)
+            val lines = ArrayList<String>()
+            for (index in 0 until history.length()) {
+                val item = history.optJSONObject(index) ?: continue
+                val role = if (item.optString("role") == "user") "أنت" else "إميليا"
+                lines.add("$role: ${item.optString("content")}")
+            }
+            chatLog.text = lines.joinToString("\n\n")
+            chatStatus.text = "الوضع المجاني المحلي يعمل 💜 (قدرات محدودة دون نموذج سحابي)"
+            if (speakNextReply) {
+                if (chatTtsReady) chatTts?.speak(reply, TextToSpeech.QUEUE_FLUSH, null, "bibicha-chat-reply")
+                else pendingChatSpeech = reply
+            }
+            speakNextReply = false
             return
         }
         sendButton.isEnabled = false

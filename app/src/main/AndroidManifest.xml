@@ -25,7 +25,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="false"
-        android:label="BiBichA"
+        android:label="Emilia"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:supportsRtl="true">
         <activity
@@ -53,7 +53,7 @@
             android:exported="true" />
         <service
             android:name=".BibichaNotificationListener"
-            android:label="BiBichA Notification Reader"
+            android:label="Emilia Notification Reader"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>

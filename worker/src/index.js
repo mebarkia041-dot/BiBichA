@@ -41,16 +41,16 @@ export default {
     if (!request.headers.get("Content-Type")?.toLowerCase().includes("application/json")) {
       return Response.json({ error: "صيغة الطلب غير مدعومة." }, { status: 415, headers });
     }
-    const contentLength = Number(request.headers.get("Content-Length") || 0);
-    if (contentLength > 64000) {
-      return Response.json({ error: "الطلب كبير بزاف." }, { status: 413, headers });
-    }
     if (!env.OPENAI_API_KEY) {
       return Response.json({ error: "الخادم غير مربوط بمفتاح الذكاء الاصطناعي بعد." }, { status: 503, headers });
     }
 
     try {
-      const body = await request.json();
+      const rawBody = await request.text();
+      if (new TextEncoder().encode(rawBody).byteLength > 64000) {
+        return Response.json({ error: "الطلب كبير بزاف." }, { status: 413, headers });
+      }
+      const body = JSON.parse(rawBody);
       const message = String(body.message || "").trim();
       const history = Array.isArray(body.history) ? body.history.slice(-12) : [];
       const memory = Array.isArray(body.memory)

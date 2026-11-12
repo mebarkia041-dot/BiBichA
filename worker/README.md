@@ -16,7 +16,7 @@
    https://github.com/mebarkia041-dot/BiBichA/blob/main/worker/src/index.js
    ثم اضغط **Deploy**.
 5. افتح **Settings** ثم **Variables and Secrets**. أضف متغيرين نصيين:
-   - الاسم `ALLOWED_ORIGIN` والقيمة `https://mebarkia041-dot.github.io`
+   - الاسم `ALLOWED_ORIGIN` والقيمة `https://mebarkia041-dot.github.io,https://bibicha.mebarkia041.workers.dev` (يسمح بعنواني الواجهة المنشورين؛ لا تستعمل النجمة `*`)
    - الاسم `OPENAI_MODEL` والقيمة `gpt-4.1-mini`
 6. من نفس الصفحة أضف **Secret** باسم `OPENAI_API_KEY` وضع فيه مفتاح OpenAI API. لا تشارك المفتاح ولا تضعه في التطبيق.
 7. أنشئ رمزاً عشوائياً طويلاً (32 حرفاً أو أكثر) واحفظه عندك، ثم أضفه كـ **Secret** باسم `MOBILE_APP_TOKEN`. هذا الرمز خاص بتطبيق Android.

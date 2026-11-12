@@ -52,6 +52,31 @@ class MainActivity : Activity() {
             text = "تفعيل إعلان المكالمات الواردة"
             setOnClickListener { requestCallScreeningRole() }
         }
+
+        val notificationPrivacy = Button(this).apply {
+            fun refreshLabel() {
+                text = if (SecureConfig.notificationReadingEnabled(this@MainActivity)) {
+                    "إيقاف قراءة محتوى الإشعارات"
+                } else {
+                    "السماح لبيبيشا بقراءة الإشعارات"
+                }
+            }
+            refreshLabel()
+            setOnClickListener {
+                val enabled = !SecureConfig.notificationReadingEnabled(this@MainActivity)
+                SecureConfig.setNotificationReadingEnabled(this@MainActivity, enabled)
+                refreshLabel()
+                Toast.makeText(
+                    this@MainActivity,
+                    if (enabled) "تفعّلت القراءة الصوتية. يلزم أيضاً إذن الإشعارات من إعدادات Android."
+                    else "توقفت بيبيشا عن قراءة محتوى الإشعارات.",
+                    Toast.LENGTH_LONG
+                ).show()
+                if (enabled) {
+                    startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
+                }
+            }
+        }
         val emergencyTitle = TextView(this).apply {
             text = "مشاركة الموقع في الطوارئ"
             textSize = 20f
@@ -156,6 +181,7 @@ class MainActivity : Activity() {
             addView(status)
             addView(activate)
             addView(notifications)
+            addView(notificationPrivacy)
             addView(callerId)
             addView(emergencyTitle)
             addView(emergencyNumber)

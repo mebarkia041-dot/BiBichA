@@ -31,7 +31,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
 
     override fun onCreateContentView(): View {
         statusView = TextView(context).apply {
-            text = "💜 بيبيشا\nأنا نسمع فيك..."
+            text = "💜 إميليا\nأنا نسمع فيك..."
             textSize = 22f
             setPadding(32, 32, 32, 32)
             textAlignment = View.TEXT_ALIGNMENT_CENTER
@@ -75,7 +75,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
         recognizer = SpeechRecognizer.createSpeechRecognizer(context).also { speech ->
             speech.setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {
-                    statusView?.text = "💜 بيبيشا\nراني نسمع..."
+                    statusView?.text = "💜 إميليا\nراني نسمع..."
                 }
                 override fun onBeginningOfSpeech() {
                     recognitionErrorCount = 0
@@ -118,7 +118,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ar-DZ")
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
-                putExtra(RecognizerIntent.EXTRA_PROMPT, "تكلم مع بيبيشا")
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "تكلم مع إميليا")
             }
             speech.startListening(intent)
         }
@@ -247,7 +247,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
         val worker = SecureConfig.workerUrl(context)
         val token = try { SecureConfig.token(context) } catch (_: Exception) { "" }
         if (worker.isBlank() || token.isBlank()) {
-            say("باش نهدر معاك بالذكاء الحقيقي، لازم تكمل إعداد رابط الخادم ورمز الربط في تطبيق بيبيشا.")
+            say("باش نهدر معاك بالذكاء الحقيقي، لازم تكمل إعداد رابط الخادم ورمز الربط في تطبيق إميليا.")
             return
         }
         statusView?.text = "بيبيشا راهي تفكر..."
@@ -292,7 +292,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
     }
 
     private fun say(message: String) {
-        statusView?.text = "💜 بيبيشا\n$message"
+        statusView?.text = "💜 إميليا\n$message"
         if (speakerReady) {
             speaker?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "bibicha-response")
         } else {

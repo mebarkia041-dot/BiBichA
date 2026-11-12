@@ -3,7 +3,7 @@ const SYSTEM_PROMPT = `أنت بيبيشا، المساعدة الشخصية و�
 function corsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Vary": "Origin"
   };
@@ -39,6 +39,9 @@ export default {
     const validClientToken = Boolean(env.MOBILE_APP_TOKEN && authorization === `Bearer ${env.MOBILE_APP_TOKEN}`);
     if (!validClientToken) {
       return Response.json({ error: "يلزم رمز ربط صحيح للوصول إلى بيبيشا." }, { status: 401, headers });
+    }
+    if (url.pathname === "/auth-check" && request.method === "GET") {
+      return Response.json({ authorized: true, service: "BiBichA AI" }, { headers });
     }
     if (url.pathname !== "/chat" || request.method !== "POST") return new Response("Not found", { status: 404, headers });
     if (!request.headers.get("Content-Type")?.toLowerCase().includes("application/json")) {

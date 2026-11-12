@@ -42,7 +42,7 @@ const autoVoiceBtn=document.getElementById('autoVoice');
 function refreshVoiceButton(){autoVoiceBtn.textContent=autoVoice?'🔊 الصوت التلقائي: يعمل':'🔈 الصوت التلقائي: متوقف';}
 refreshVoiceButton();
 function apiBase(){
- return (window.BIBICHA_API_URL||'').trim().replace(/\\/+$/,'').replace(/\\/chat$/i,'');
+ return (window.BIBICHA_API_URL||'').trim().replace(/\/+$/,'').replace(/\/chat$/i,'');
 }
 function chatEndpoint(){const base=apiBase();return base?base+'/chat':'';}
 async function checkBackend(){

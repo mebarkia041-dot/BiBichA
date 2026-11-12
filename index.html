@@ -23,7 +23,7 @@ button{border:0;border-radius:24px;padding:0 16px;background:#8b5cf6;color:#fff;
 </style></head>
 <body><main class="app">
 <header><h1>💜 BiBichA</h1><p>بيبيشا • سارة • وحيدتي</p></header>
-<div class="toolbar"><button type="button" id="install" hidden>📲 تثبيت بيبيشا</button><button type="button" id="voice">🎙️ تحدث</button><button type="button" id="speak">🔊 قراءة الرد</button><button type="button" id="autoVoice">🔈 الصوت التلقائي: متوقف</button><button type="button" id="memoryBtn">🧠 الذاكرة</button><button type="button" id="backup">💾 نسخة احتياطية</button><button type="button" id="restore">📥 استرجاع</button><input id="restoreFile" type="file" accept="application/json,.json" hidden><button type="button" id="clear">مسح المحادثة</button></div>
+<div class="toolbar"><button type="button" id="install" hidden>📲 تثبيت بيبيشا</button><button type="button" id="connect">🔐 ربط آمن</button><button type="button" id="voice">🎙️ تحدث</button><button type="button" id="speak">🔊 قراءة الرد</button><button type="button" id="autoVoice">🔈 الصوت التلقائي: متوقف</button><button type="button" id="memoryBtn">🧠 الذاكرة</button><button type="button" id="backup">💾 نسخة احتياطية</button><button type="button" id="restore">📥 استرجاع</button><input id="restoreFile" type="file" accept="application/json,.json" hidden><button type="button" id="clear">مسح المحادثة</button></div>
 <section id="messages" aria-live="polite"></section>
 <form id="chat"><input id="entry" placeholder="اكتب رسالتك هنا..." autocomplete="off" required><button type="submit">إرسال</button></form>
 <div id="connection" role="status">حالة الاتصال: جاري الفحص...</div>
@@ -37,10 +37,18 @@ let history=[];
 try{const saved=JSON.parse(localStorage.getItem('bibicha-chat')||'[]');history=Array.isArray(saved)?saved.filter(x=>x&&['user','bot'].includes(x.role)&&typeof x.text==='string').map(x=>({role:x.role,text:x.text.slice(0,10000)})).slice(-100):[];}catch(e){history=[];}
 let memory={facts:[]};
 try{memory=JSON.parse(localStorage.getItem('bibicha-memory')||'{"facts":[]}');if(!memory||!Array.isArray(memory.facts))memory={facts:[]};else memory={facts:memory.facts.filter(x=>typeof x==='string').map(x=>x.trim().slice(0,500)).filter(Boolean).slice(-30)};}catch(e){memory={facts:[]};}
+let apiToken=sessionStorage.getItem('bibicha-client-token')||'';
 let autoVoice=localStorage.getItem('bibicha-auto-voice')==='1';
 const autoVoiceBtn=document.getElementById('autoVoice');
 function refreshVoiceButton(){autoVoiceBtn.textContent=autoVoice?'🔊 الصوت التلقائي: يعمل':'🔈 الصوت التلقائي: متوقف';}
 refreshVoiceButton();
+document.getElementById('connect').addEventListener('click',()=>{
+ const value=prompt('أدخل رمز MOBILE_APP_TOKEN الذي ضبطته في Cloudflare (لا تدخل مفتاح OpenAI):');
+ if(value===null)return;
+ if(value.trim().length<32){alert('رمز الربط يجب أن يكون 32 حرفاً على الأقل.');return;}
+ apiToken=value.trim();sessionStorage.setItem('bibicha-client-token',apiToken);
+ document.getElementById('connection').textContent='تم حفظ رمز الربط لهذه الجلسة في المتصفح. أرسل رسالة لاختبار الاتصال.';
+});
 function apiBase(){
  return (window.BIBICHA_API_URL||'').trim().replace(/\/+$/,'').replace(/\/chat$/i,'');
 }
@@ -82,8 +90,9 @@ form.addEventListener('submit',async e=>{
  try{
    const endpoint=chatEndpoint();
    if(!endpoint){add('bot',reply(v));return;}
+   if(!apiToken)throw new Error('اضغط «ربط آمن» وأدخل رمز الربط الذي ضبطته في Cloudflare أولاً.');
    const context=previous.map(x=>({role:x.role==='user'?'user':'assistant',content:x.text}));
-   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:v,history:context,memory:memory.facts}),signal:AbortSignal.timeout(35000)});
+   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiToken},body:JSON.stringify({message:v,history:context,memory:memory.facts}),signal:AbortSignal.timeout(35000)});
    const data=await response.json().catch(()=>({}));
 
    if(!response.ok)throw new Error(data.error||'تعذر الاتصال بالخادم.');

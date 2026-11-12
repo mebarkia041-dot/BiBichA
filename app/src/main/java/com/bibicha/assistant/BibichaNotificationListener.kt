@@ -22,7 +22,7 @@ class BibichaNotificationListener : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        if (sbn == null || !ready) return
+        if (sbn == null || !ready || !SecureConfig.notificationReadingEnabled(this)) return
         val messagingApps = setOf(
             "com.whatsapp",
             "com.google.android.apps.messaging",

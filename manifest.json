@@ -1,0 +1,12 @@
+{
+  "name": "BiBichA",
+  "short_name": "BiBichA",
+  "description": "مساعدك الذكي بيبيشا",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f3ff",
+  "theme_color": "#8b5cf6"
+}

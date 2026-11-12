@@ -87,8 +87,8 @@ form.addEventListener('submit',async e=>{
 });
 document.getElementById('clear').addEventListener('click',()=>{history=[];localStorage.removeItem('bibicha-chat');box.innerHTML='';add('bot','رجعنا صفحة جديدة ❤️ ذاكرتي المحفوظة تبقى. أنا بيبيشا، واش نحكيو اليوم؟');});
 document.getElementById('memoryBtn').addEventListener('click',()=>{
- const facts=memory.facts.length?memory.facts.map((x,i)=>(i+1)+'. '+x).join('\\n'):'مازال ما حفظتش حتى معلومة.';
- const action=confirm('ذاكرة بيبيشا (محفوظة على هذا الهاتف):\\n\\n'+facts+'\\n\\nاضغط موافق لمسح الذاكرة كاملة، أو إلغاء للاحتفاظ بها.');
+ const facts=memory.facts.length?memory.facts.map((x,i)=>(i+1)+'. '+x).join('\n'):'مازال ما حفظتش حتى معلومة.';
+ const action=confirm('ذاكرة بيبيشا (محفوظة على هذا الهاتف):\n\n'+facts+'\n\nاضغط موافق لمسح الذاكرة كاملة، أو إلغاء للاحتفاظ بها.');
  if(action){memory={facts:[]};saveMemory();add('bot','مسحت الذاكرة المحفوظة من هذا الهاتف.');}
 });
 document.getElementById('backup').addEventListener('click',()=>{

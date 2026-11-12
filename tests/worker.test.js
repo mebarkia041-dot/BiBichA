@@ -6,7 +6,7 @@ import worker from "../worker/src/index.js";
 
 const ORIGIN = "https://mebarkia041-dot.github.io";
 const env = (extra = {}) => ({
-  ALLOWED_ORIGIN: ORIGIN,
+  ALLOWED_ORIGIN: ORIGIN + ",https://bibicha.mebarkia041.workers.dev",
   OPENAI_API_KEY: "test-secret",
   OPENAI_MODEL: "gpt-test",
   ...extra
@@ -34,6 +34,16 @@ test("health reports missing secret without exposing configuration", async () =>
   const response = await worker.fetch(request("/health"), env({ OPENAI_API_KEY: "" }));
   assert.equal(response.status, 200);
   assert.equal((await response.json()).configured, false);
+});
+
+test("chat accepts the deployed workers.dev app origin", async () => {
+  const deployedOrigin = "https://bibicha.mebarkia041.workers.dev";
+  const response = await worker.fetch(request("/chat", {
+    method: "OPTIONS",
+    origin: deployedOrigin
+  }), env());
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), deployedOrigin);
 });
 
 test("chat rejects requests from an unapproved origin", async () => {

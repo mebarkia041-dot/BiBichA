@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#8b5cf6"><title>BiBichA</title>
+<meta name="theme-color" content="#8b5cf6"><link rel="manifest" href="./manifest.json"><title>BiBichA</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial;background:#f7f3ff;color:#241b35;min-height:100vh;display:flex;justify-content:center}
 .app{width:100%;max-width:520px;height:100dvh;background:#fff;display:flex;flex-direction:column;box-shadow:0 0 35px #32145b12}
@@ -19,11 +19,12 @@ button{border:0;border-radius:24px;padding:0 18px;background:#8b5cf6;color:#fff;
 </style></head>
 <body><main class="app">
 <header><h1>💜 BiBichA</h1><p>بيبيشا • سارة • وحيدتي</p></header>
-<section id="messages" aria-live="polite"><div class="msg bot">سلام ❤️ أنا بيبيشا. فرحانة نكون معاك! هذي النسخة الأولى من واجهة التطبيق.</div></section>
+<section id="messages" aria-live="polite"><div class="msg bot">سلام ❤️ أنا بيبيشا. فرحانة نكون معاك! نقدر نخدم كواجهة حتى بلا إنترنت بعد أول زيارة.</div></section>
 <form id="chat"><input id="entry" placeholder="اكتب رسالتك هنا..." autocomplete="off" required><button>إرسال</button></form>
-<div class="note">نسخة أولية للواجهة — الذكاء الاصطناعي والذاكرة الصوتية لم يتم ربطهما بعد.</div>
+<div class="note">النسخة الحالية تحفظ واجهة التطبيق للعمل دون إنترنت بعد تحميلها أول مرة. الذكاء الاصطناعي والصوت والذاكرة لم تُربط بعد.</div>
 </main>
 <script>
 const box=document.getElementById('messages'), form=document.getElementById('chat'), entry=document.getElementById('entry');
 form.addEventListener('submit',e=>{e.preventDefault();const v=entry.value.trim();if(!v)return;const m=document.createElement('div');m.className='msg user';m.textContent=v;box.appendChild(m);entry.value='';box.scrollTop=box.scrollHeight;});
+if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script></body></html>

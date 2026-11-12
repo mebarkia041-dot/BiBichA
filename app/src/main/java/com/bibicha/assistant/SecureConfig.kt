@@ -9,12 +9,15 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import org.json.JSONArray
+import org.json.JSONObject
 
 object SecureConfig {
     private const val PREFS = "bibicha_secure_config"
     private const val KEY_ALIAS = "bibicha_mobile_token_key"
     private const val URL_KEY = "worker_url"
     private const val TOKEN_KEY = "mobile_token_encrypted"
+    private const val HISTORY_KEY = "conversation_history_encrypted"
 
     fun save(context: Context, workerUrl: String, token: String) {
         val normalizedUrl = workerUrl.trim().trimEnd('/')
@@ -36,6 +39,29 @@ object SecureConfig {
         val encoded = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(TOKEN_KEY, null)
             ?: return ""
         return decrypt(encoded)
+    }
+
+    fun history(context: Context): JSONArray {
+        val encoded = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(HISTORY_KEY, null)
+            ?: return JSONArray()
+        return try { JSONArray(decrypt(encoded)) } catch (_: Exception) { JSONArray() }
+    }
+
+    fun addHistory(context: Context, role: String, content: String) {
+        if (role !in setOf("user", "assistant") || content.isBlank()) return
+        val items = history(context)
+        items.put(JSONObject().put("role", role).put("content", content.take(4000)))
+        val trimmed = JSONArray()
+        val start = (items.length() - 12).coerceAtLeast(0)
+        for (index in start until items.length()) trimmed.put(items.getJSONObject(index))
+        val encrypted = encrypt(trimmed.toString())
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(HISTORY_KEY, encrypted)
+            .apply()
+    }
+
+    fun clearHistory(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(HISTORY_KEY).apply()
     }
 
     private fun getOrCreateKey(): SecretKey {

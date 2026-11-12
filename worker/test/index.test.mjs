@@ -34,6 +34,22 @@ test("health reports whether the server secret exists", async () => {
   assert.deepEqual(await response.json(), { service: "Emilia AI", configured: true });
 });
 
+test("health reports incomplete configuration when either required secret is missing", async () => {
+  const missingToken = await worker.fetch(
+    request("/health", { method: "GET" }),
+    { ...env, MOBILE_APP_TOKEN: "" }
+  );
+  assert.equal(missingToken.status, 200);
+  assert.deepEqual(await missingToken.json(), { service: "Emilia AI", configured: false });
+
+  const missingApiKey = await worker.fetch(
+    request("/health", { method: "GET" }),
+    { ...env, OPENAI_API_KEY: "" }
+  );
+  assert.equal(missingApiKey.status, 200);
+  assert.deepEqual(await missingApiKey.json(), { service: "Emilia AI", configured: false });
+});
+
 test("authenticated setup check rejects a missing token and accepts a valid one", async () => {
   const missing = await worker.fetch(request("/auth-check", { method: "GET" }), env);
   assert.equal(missing.status, 401);

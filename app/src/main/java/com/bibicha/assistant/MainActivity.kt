@@ -448,7 +448,7 @@ class MainActivity : Activity() {
                 connection.disconnect()
                 connection = null
                 if (healthCode !in 200..299 || !health.optBoolean("configured", false)) {
-                    throw IllegalStateException("الخادم غير مكتمل الإعداد: تحقق من OPENAI_API_KEY وMOBILE_APP_TOKEN في Cloudflare.")
+                    throw IllegalStateException("الخادم غير مكتمل الإعداد: فعّل ربط Workers AI أو أضف OPENAI_API_KEY، وتأكد من MOBILE_APP_TOKEN في Cloudflare.")
                 }
 
                 connection = (URL("$base/auth-check").openConnection() as HttpURLConnection).apply {

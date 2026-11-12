@@ -1,45 +1,51 @@
 # ربط الذكاء الاصطناعي الحقيقي في BiBichA
 
-هذا الدليل مخصص للهاتف. لا تحتاج إلى تعديل كود إضافي بعد إعداد Cloudflare وربط رابط الخادم.
+هذا الدليل مخصص لإعداد خادم بيبيشا على Cloudflare. رابط المشروع مضبوط على:
 
-## قبل البدء
-- تحتاج حساب Cloudflare.
-- تحتاج مفتاح OpenAI API صالحاً مع تفعيل الفوترة أو رصيد API.
-- **لا ترسل مفتاح API في المحادثة، ولا تضعه في GitHub أو داخل ملفات التطبيق.** مكانه الوحيد هو Secret في Cloudflare.
+`https://bibicha.mebarkia041.workers.dev`
 
-## خطوات الإعداد
+## إعداد Cloudflare
 
-1. افتح https://dash.cloudflare.com/ وسجّل الدخول.
-2. من القائمة اختر **Workers & Pages** ثم **Create** ثم **Create Worker**.
-3. سمّ العامل `bibicha-ai` ثم أنشئه.
-4. افتح العامل واضغط **Edit code**. استبدل محتوى المحرر كاملاً بالكود الموجود هنا:
-   https://github.com/mebarkia041-dot/BiBichA/blob/main/worker/src/index.js
-   ثم اضغط **Deploy**.
-5. افتح **Settings** ثم **Variables and Secrets**. أضف متغيرين نصيين:
-   - الاسم `ALLOWED_ORIGIN` والقيمة `https://mebarkia041-dot.github.io,https://bibicha.mebarkia041.workers.dev` (يسمح بعنواني الواجهة المنشورين؛ لا تستعمل النجمة `*`)
-   - الاسم `OPENAI_MODEL` والقيمة `gpt-4.1-mini`
-6. من نفس الصفحة أضف **Secret** باسم `OPENAI_API_KEY` وضع فيه مفتاح OpenAI API. لا تشارك المفتاح ولا تضعه في التطبيق.
-7. أنشئ رمزاً عشوائياً طويلاً (32 حرفاً أو أكثر) واحفظه عندك، ثم أضفه كـ **Secret** باسم `MOBILE_APP_TOKEN`. هذا الرمز خاص بتطبيق Android.
-8. تأكد من أن `MOBILE_APP_TOKEN` يتكون من 32 حرفاً على الأقل، وأنه مطابق تماماً للرمز الذي تحفظه داخل التطبيق.
-9. انسخ عنوان العامل الذي ينتهي عادةً بـ `.workers.dev`. في تطبيق Android أدخل هذا الرابط ورمز `MOBILE_APP_TOKEN` نفسه في قسم «ربط الذكاء الاصطناعي». التطبيق يحفظ الرمز مشفراً باستعمال Android Keystore.
-10. لا تضع مفتاح OpenAI في الهاتف أبداً؛ التطبيق يتصل بالـ Worker برمز منفصل، ومفتاح OpenAI يبقى داخل Cloudflare.
+1. افتح https://dash.cloudflare.com/ ثم **Workers & Pages**.
+2. افتح العامل المرتبط بالرابط أعلاه. إذا لم يكن موجوداً، أنشئ Worker بالاسم **bibicha** (وليس bibicha-ai).
+3. من **Edit code** استعمل الملف `worker/src/index.js` الموجود في المستودع، ثم اضغط **Deploy**.
+4. افتح **Settings → Variables and Secrets** وأضف:
+   - Text variable: `ALLOWED_ORIGIN` = `https://mebarkia041-dot.github.io,https://bibicha.mebarkia041.workers.dev`
+   - Text variable: `OPENAI_MODEL` = `gpt-4.1-mini`
+   - Secret: `OPENAI_API_KEY` = مفتاح OpenAI API الخاص بك.
+   - Secret: `MOBILE_APP_TOKEN` = رمز عشوائي طويل لا يقل عن 32 حرفاً.
+5. لا ترسل أي مفتاح أو رمز في المحادثة، ولا تضع `OPENAI_API_KEY` في GitHub أو الهاتف.
+6. في تطبيق Android أدخل رابط Worker أعلاه، ثم أدخل نفس `MOBILE_APP_TOKEN` الذي وضعته في Cloudflare.
 
-## حماية الاتصال
-- طلبات الويب تقبل فقط `ALLOWED_ORIGIN`.
-- طلبات Android الأصلية تعتمد على `Authorization: Bearer ...` المطابق للسر `MOBILE_APP_TOKEN`.
-- لا تستخدم قيمة `OPENAI_API_KEY` كرمز للهاتف.
-- إذا تغيّر `MOBILE_APP_TOKEN` في Cloudflare، حدّث الرمز المحفوظ في التطبيق أيضاً.
+## إعداد النشر من ملفات المشروع
 
-## التحقق من الربط
+أضفت ملف `worker/wrangler.toml` مضبوطاً على اسم `bibicha` حتى يتطابق مع رابط `api-config.js`. إذا كنت تستعمل Wrangler من بيئة تطوير، شغّل من جذر المستودع:
 
-افتح عنوان العامل متبوعاً بـ `/health` في المتصفح. يجب أن يظهر:
-- `"service":"BiBichA AI"`
-- `"configured":true`
+```bash
+npx wrangler deploy --config worker/wrangler.toml
+```
 
-هذا يؤكد أن السر موجود فقط؛ لا يؤكد وحده نجاح محادثة OpenAI. بعد ربط رابط `/chat` في التطبيق، أرسل رسالة تجريبية للتأكد من عمل المفتاح والنموذج والفوترة.
+ثم أضف الأسرار في Cloudflare (لا تضعها في ملف TOML):
 
-## ما الذي يعمل حالياً؟
-- واجهة المحادثة وسجلها والذاكرة المحلية والصوت تعمل بحسب دعم المتصفح.
-- الذاكرة محفوظة محلياً على الهاتف، وليست مزامنة سحابية.
-- نسخة Android تحتوي على محادثة نصية وإدخال صوتي بالعربية الجزائرية، ويمكنها نطق الرد بعد السؤال الصوتي. تستخدم Worker بعد إدخال الرابط ورمز الهاتف في إعدادات التطبيق. لا تعمل محادثة الذكاء الحقيقي قبل نشر Worker وضبط الأسرار `OPENAI_API_KEY` و`MOBILE_APP_TOKEN` و`ALLOWED_ORIGIN`.
-- يحتفظ التطبيق بآخر 12 رسالة من المحادثة مشفّرة محلياً، ويمكن مسحها من شاشة الإعدادات. لا توجد بعد ذاكرة طويلة الأمد للحقائق الشخصية.
+```bash
+npx wrangler secret put OPENAI_API_KEY --config worker/wrangler.toml
+npx wrangler secret put MOBILE_APP_TOKEN --config worker/wrangler.toml
+```
+
+## اختبار الاتصال
+
+افتح `https://bibicha.mebarkia041.workers.dev/health`. النتيجة المتوقعة:
+
+```json
+{"service":"BiBichA AI","configured":true}
+```
+
+هذا يعني أن Secret باسم `OPENAI_API_KEY` موجود فقط؛ لا يثبت وحده أن المفتاح صالح أو أن الفوترة مفعّلة. الاختبار النهائي هو إرسال رسالة من التطبيق.
+
+## الوظائف والحدود الحالية
+
+- الواجهة تحفظ سجل المحادثة والذاكرة محلياً على الجهاز.
+- المتصفح يستعمل التعرف الصوتي والنطق إذا كانا مدعومين.
+- Android يرسل المحادثة إلى Worker برمز منفصل، ويحفظ السجل والذاكرة محلياً بتشفير Android Keystore.
+- ميزات الهاتف الحساسة تحتاج أذونات Android وتأكيد المستخدم؛ لا يتم إرسال الرسائل أو مشاركة الموقع تلقائياً.
+- لا توجد حالياً مزامنة ذاكرة بين الأجهزة.

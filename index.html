@@ -34,11 +34,11 @@ button{border:0;border-radius:24px;padding:0 16px;background:#8b5cf6;color:#fff;
 const box=document.getElementById('messages'),form=document.getElementById('chat'),entry=document.getElementById('entry');
 let installPrompt=null;const installBtn=document.getElementById('install');window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installBtn.hidden=false;});installBtn.addEventListener('click',async()=>{if(!installPrompt){add('bot','إذا ما ظهرش خيار التثبيت، افتح قائمة المتصفح واختر «إضافة إلى الشاشة الرئيسية».');return;}installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;installBtn.hidden=true;});window.addEventListener('appinstalled',()=>{installBtn.hidden=true;add('bot','مرحبا بيك! إميليا تثبتت في هاتفك ❤️');});
 let history=[];
-try{const saved=JSON.parse(localStorage.getItem('emilia-chat')||'[]');history=Array.isArray(saved)?saved.filter(x=>x&&['user','bot'].includes(x.role)&&typeof x.text==='string').map(x=>({role:x.role,text:x.text.slice(0,10000)})).slice(-100):[];}catch(e){history=[];}
+try{const saved=JSON.parse(localStorage.getItem('bibicha-chat')||'[]');history=Array.isArray(saved)?saved.filter(x=>x&&['user','bot'].includes(x.role)&&typeof x.text==='string').map(x=>({role:x.role,text:x.text.slice(0,10000)})).slice(-100):[];}catch(e){history=[];}
 let memory={facts:[]};
-try{memory=JSON.parse(localStorage.getItem('emilia-memory')||'{"facts":[]}');if(!memory||!Array.isArray(memory.facts))memory={facts:[]};else memory={facts:memory.facts.filter(x=>typeof x==='string').map(x=>x.trim().slice(0,500)).filter(Boolean).slice(-30)};}catch(e){memory={facts:[]};}
-let apiToken=sessionStorage.getItem('emilia-client-token')||'';
-let autoVoice=localStorage.getItem('emilia-auto-voice')==='1';
+try{memory=JSON.parse(localStorage.getItem('bibicha-memory')||'{"facts":[]}');if(!memory||!Array.isArray(memory.facts))memory={facts:[]};else memory={facts:memory.facts.filter(x=>typeof x==='string').map(x=>x.trim().slice(0,500)).filter(Boolean).slice(-30)};}catch(e){memory={facts:[]};}
+let apiToken=sessionStorage.getItem('bibicha-client-token')||'';
+let autoVoice=localStorage.getItem('bibicha-auto-voice')==='1';
 const autoVoiceBtn=document.getElementById('autoVoice');
 function refreshVoiceButton(){autoVoiceBtn.textContent=autoVoice?'🔊 الصوت التلقائي: يعمل':'🔈 الصوت التلقائي: متوقف';}
 refreshVoiceButton();
@@ -46,7 +46,7 @@ document.getElementById('connect').addEventListener('click',()=>{
  const value=prompt('أدخل رمز MOBILE_APP_TOKEN الذي ضبطته في Cloudflare (لا تدخل مفتاح OpenAI):');
  if(value===null)return;
  if(value.trim().length<32){alert('رمز الربط يجب أن يكون 32 حرفاً على الأقل.');return;}
- apiToken=value.trim();sessionStorage.setItem('emilia-client-token',apiToken);
+ apiToken=value.trim();sessionStorage.setItem('bibicha-client-token',apiToken);
  document.getElementById('connection').textContent='تم حفظ رمز الربط لهذه الجلسة في المتصفح. أرسل رسالة لاختبار الاتصال.';
 });
 function apiBase(){
@@ -65,8 +65,8 @@ async function checkBackend(){
 }
 checkBackend();
 function say(text){if(!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(text);u.lang='ar-DZ';u.rate=.94;u.pitch=1.08;speechSynthesis.cancel();speechSynthesis.speak(u);}
-autoVoiceBtn.addEventListener('click',()=>{autoVoice=!autoVoice;localStorage.setItem('emilia-auto-voice',autoVoice?'1':'0');refreshVoiceButton();if(autoVoice)say('الصوت التلقائي راه يخدم الآن ❤️');});
-function saveMemory(){try{localStorage.setItem('emilia-memory',JSON.stringify(memory));}catch(e){}}
+autoVoiceBtn.addEventListener('click',()=>{autoVoice=!autoVoice;localStorage.setItem('bibicha-auto-voice',autoVoice?'1':'0');refreshVoiceButton();if(autoVoice)say('الصوت التلقائي راه يخدم الآن ❤️');});
+function saveMemory(){try{localStorage.setItem('bibicha-memory',JSON.stringify(memory));}catch(e){}}
 function rememberFromMessage(value){
  const q=value.trim();
  if(/^(احذف الذاكرة|امسح الذاكرة|انسى كل ما حفظت)/.test(q)){memory={facts:[]};saveMemory();return 'تم مسح المعلومات المحفوظة من هذا الهاتف.';}
@@ -76,8 +76,8 @@ function rememberFromMessage(value){
  }
  return '';
 }
-function add(role,text,save=true){const m=document.createElement('div');m.className='msg '+role;m.textContent=text;box.appendChild(m);box.scrollTop=box.scrollHeight;if(save){history.push({role,text});try{localStorage.setItem('emilia-chat',JSON.stringify(history.slice(-100)));}catch(e){}}if(role==='bot'&&autoVoice)say(text);}
-function reply(q){const s=q.toLowerCase();if(/سلام|salam|مرحبا|bonjour/.test(s))return 'وعليكم السلام ❤️ أنا إميليا، راني هنا معاك.';if(/اسمك|شكون|من انت/.test(s))return 'أنا إميليا، وتقدر تناديني سارة أو وحيدتي 💜';if(/شكرا|merci/.test(s))return 'بلا مزية يا الغالي ❤️';if(/كيف حالك|واش راكي/.test(s))return 'لاباس الحمد لله، وفرحانة نهدر معاك 😊';if(/نحبك|احبك/.test(s))return 'كلامك حنون ❤️ أنا هنا باش نعاونك ونسمعلك.';return 'وصلتني رسالتك ❤️ حالياً هذي نسخة أولية بردود بسيطة دون إنترنت. الذكاء الاصطناعي الحقيقي مازال يحتاج ربط آمن بخدمة API.';}
+function add(role,text,save=true){const m=document.createElement('div');m.className='msg '+role;m.textContent=text;box.appendChild(m);box.scrollTop=box.scrollHeight;if(save){history.push({role,text});try{localStorage.setItem('bibicha-chat',JSON.stringify(history.slice(-100)));}catch(e){}}if(role==='bot'&&autoVoice)say(text);}
+function reply(q){const s=q.toLowerCase();if(/سلام|salam|مرحبا|bonjour/.test(s))return 'وعليكم السلام ❤️ أنا إميليا، راني هنا معاك.';if(/اسمك|شكون|من انت/.test(s))return 'أنا إميليا، واسمي إميليا فقط 💜';if(/شكرا|merci/.test(s))return 'بلا مزية يا الغالي ❤️';if(/كيف حالك|واش راكي/.test(s))return 'لاباس الحمد لله، وفرحانة نهدر معاك 😊';if(/نحبك|احبك/.test(s))return 'كلامك حنون ❤️ أنا هنا باش نعاونك ونسمعلك.';return 'وصلتني رسالتك ❤️ حالياً هذي نسخة أولية بردود بسيطة دون إنترنت. الذكاء الاصطناعي الحقيقي مازال يحتاج ربط آمن بخدمة API.';}
 if(history.length){history.forEach(x=>add(x.role,x.text,false));}else add('bot','سلام ❤️ أنا إميليا. اكتبلّي واش حاب، ونبدأو مع بعض.');
 form.addEventListener('submit',async e=>{
  e.preventDefault();
@@ -100,14 +100,14 @@ form.addEventListener('submit',async e=>{
  }catch(err){add('bot',err.name==='TimeoutError'?'الخادم تأخر في الرد. تحقق من الاتصال وحاول مرة أخرى.':(err.message||'ما قدرتش نتصل بالخادم حالياً. تحقق من الإنترنت وإعدادات الربط.'));}
  finally{send.disabled=false;send.textContent='إرسال';entry.focus();}
 });
-document.getElementById('clear').addEventListener('click',()=>{history=[];localStorage.removeItem('emilia-chat');box.innerHTML='';add('bot','رجعنا صفحة جديدة ❤️ ذاكرتي المحفوظة تبقى. أنا إميليا، واش نحكيو اليوم؟');});
+document.getElementById('clear').addEventListener('click',()=>{history=[];localStorage.removeItem('bibicha-chat');box.innerHTML='';add('bot','رجعنا صفحة جديدة ❤️ ذاكرتي المحفوظة تبقى. أنا إميليا، واش نحكيو اليوم؟');});
 document.getElementById('memoryBtn').addEventListener('click',()=>{
  const facts=memory.facts.length?memory.facts.map((x,i)=>(i+1)+'. '+x).join('\n'):'مازال ما حفظتش حتى معلومة.';
  const action=confirm('ذاكرة إميليا (محفوظة على هذا الهاتف):\n\n'+facts+'\n\nاضغط موافق لمسح الذاكرة كاملة، أو إلغاء للاحتفاظ بها.');
  if(action){memory={facts:[]};saveMemory();add('bot','مسحت الذاكرة المحفوظة من هذا الهاتف.');}
 });
 document.getElementById('backup').addEventListener('click',()=>{
- const data={app:'Emilia',version:1,exportedAt:new Date().toISOString(),history,memory};
+ const data={app:'BiBichA',version:1,exportedAt:new Date().toISOString(),history,memory};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob);const a=document.createElement('a');
  a.href=url;a.download='emilia-backup-'+new Date().toISOString().slice(0,10)+'.json';
@@ -121,10 +121,10 @@ restoreFile.addEventListener('change',async()=>{
  try{
   if(file.size>2*1024*1024)throw new Error('الملف كبير بزاف.');
   const data=JSON.parse(await file.text());
-  if(!data||data.app!=='Emilia'||!Array.isArray(data.history)||!data.memory||!Array.isArray(data.memory.facts))throw new Error('هذا الملف ماشي نسخة احتياطية صالحة لإميليا.');
+  if(!data||data.app!=='BiBichA'||!Array.isArray(data.history)||!data.memory||!Array.isArray(data.memory.facts))throw new Error('هذا الملف ماشي نسخة احتياطية صالحة لإميليا.');
   history=data.history.filter(x=>x&&['user','bot'].includes(x.role)&&typeof x.text==='string').map(x=>({role:x.role,text:x.text.slice(0,10000)})).slice(-100);
   memory={facts:data.memory.facts.filter(x=>typeof x==='string').map(x=>x.trim().slice(0,500)).filter(Boolean).slice(-30)};
-  localStorage.setItem('emilia-chat',JSON.stringify(history));
+  localStorage.setItem('bibicha-chat',JSON.stringify(history));
   saveMemory();box.innerHTML='';history.forEach(x=>add(x.role,x.text,false));
   add('bot','تم استرجاع النسخة الاحتياطية بنجاح ❤️');
  }catch(err){add('bot',err.message||'تعذر استرجاع النسخة.');}

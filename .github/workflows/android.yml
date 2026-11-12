@@ -29,19 +29,23 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-      - name: Build release APK
+      - name: Build safe-install release APK
         run: gradle --no-daemon :app:assembleRelease
-      - name: Verify signed release APK
+      - name: Verify APK package, version and signature
+        shell: bash
         run: |
-          test -s app/build/outputs/apk/release/app-release.apk
-          file app/build/outputs/apk/release/app-release.apk
-          $ANDROID_HOME/build-tools/35.0.0/aapt dump badging app/build/outputs/apk/release/app-release.apk
-          $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose app/build/outputs/apk/release/app-release.apk
-          sha256sum app/build/outputs/apk/release/app-release.apk
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          BADGING="$($ANDROID_HOME/build-tools/35.0.0/aapt dump badging "$APK")"
+          echo "$BADGING"
+          grep -F "package: name='com.emilia.assistant' versionCode='4' versionName='1.0.3'" <<< "$BADGING"
+          $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose "$APK"
+          sha256sum "$APK"
       - name: Upload installable release APK
         uses: actions/upload-artifact@v4
         with:
-          name: Emilia-Android-Release-APK
+          name: Emilia-Android-Safe-Install-1.0.3
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30

@@ -28,8 +28,8 @@
 
 ## الروابط
 
-- [المستودع](https://github.com/mebarkia041-dot/Emilia)
-- [GitHub Actions وحالة الاختبارات والبناء](https://github.com/mebarkia041-dot/Emilia/actions)
+- [المستودع](https://github.com/mebarkia041-dot/BiBichA)
+- [GitHub Actions وحالة الاختبارات والبناء](https://github.com/mebarkia041-dot/BiBichA/actions)
 - [خطة Android والمراحل](ANDROID_ASSISTANT_PLAN.md)
 - [دليل Cloudflare الحالي](worker/README.md)
 

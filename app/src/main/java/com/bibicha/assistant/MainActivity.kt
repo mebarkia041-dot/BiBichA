@@ -206,7 +206,7 @@ class MainActivity : Activity() {
                 val saved = SecureConfig.memories(this@MainActivity)
                 val details = (0 until saved.length()).mapNotNull { index ->
                     saved.optString(index).takeIf { it.isNotBlank() }?.let { "• $it" }
-                }.joinToString("\\n")
+                }.joinToString("\n")
                 AlertDialog.Builder(this@MainActivity)
                     .setTitle("ذاكرة بيبيشا")
                     .setMessage(details.ifBlank { "ما حفظنا حتى معلومة بعد." })

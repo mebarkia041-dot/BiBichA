@@ -100,6 +100,15 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
     private fun handleCommand(raw: String) {
         val command = raw.lowercase(Locale.ROOT)
         statusView?.text = "قلت: $raw"
+        if (command.contains("ابعثي موقعي") || command.contains("ابعث موقعي") || command.contains("موقعي للطوارئ")) {
+            val emergency = Intent(context, MainActivity::class.java).apply {
+                putExtra(MainActivity.EXTRA_EMERGENCY_SHARE, true)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(emergency)
+            say("نفتحلك خطوة مشاركة الموقع. راجع الرسالة واضغط إرسال بنفسك.")
+            return
+        }
         if (listOf("ابعثي رسالة", "ابعث رسالة", "أرسلي رسالة", "ارسل رسالة", "send message").any { command.contains(it) }) {
             val phoneMatch = Regex("[+0-9٠-٩]{8,}").find(raw)
             if (phoneMatch == null) {

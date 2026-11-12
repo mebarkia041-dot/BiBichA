@@ -1,22 +1,39 @@
-# BiBichA AI backend
+# ربط الذكاء الاصطناعي الحقيقي في BiBichA
 
-The GitHub Pages app is static. This Worker securely calls the OpenAI API. The API key must stay in Cloudflare Secrets; never paste it into GitHub, `index.html`, or `api-config.js`.
+هذا الدليل مخصص للهاتف. لا تحتاج إلى تعديل كود إضافي بعد إعداد Cloudflare وربط رابط الخادم.
 
-## Deploy from a phone using the Cloudflare dashboard
+## قبل البدء
+- تحتاج حساب Cloudflare.
+- تحتاج مفتاح OpenAI API صالحاً مع تفعيل الفوترة أو رصيد API.
+- **لا ترسل مفتاح API في المحادثة، ولا تضعه في GitHub أو داخل ملفات التطبيق.** مكانه الوحيد هو Secret في Cloudflare.
 
-1. Open https://dash.cloudflare.com/ and sign in.
-2. Open **Workers & Pages** → **Create** → **Create Worker**. Name it `bibicha-ai`.
-3. Open the new Worker → **Edit code**. Replace the editor contents with the complete code in `worker/src/index.js`, then **Deploy**.
-4. Open **Settings** → **Variables and Secrets**. Add these plain-text variables:
-   - `ALLOWED_ORIGIN` = `https://mebarkia041-dot.github.io`
-   - `OPENAI_MODEL` = `gpt-4.1-mini`
-5. Under the same section add a **Secret** named `OPENAI_API_KEY`. Paste your own OpenAI API key into the secret field and save. Never send this key to anyone or commit it to GitHub.
-6. Copy the Worker URL shown by Cloudflare. The chat endpoint is that URL followed by `/chat`.
-7. In this GitHub repository open `api-config.js` → Edit (pencil). Set `window.BIBICHA_API_URL` to the full `https://...workers.dev/chat` URL, then commit the change.
-8. Wait for the GitHub Pages deployment. Open the app, refresh it, and send a test message.
+## خطوات الإعداد
 
-## Verify
+1. افتح https://dash.cloudflare.com/ وسجّل الدخول.
+2. من القائمة اختر **Workers & Pages** ثم **Create** ثم **Create Worker**.
+3. سمّ العامل `bibicha-ai` ثم أنشئه.
+4. افتح العامل واضغط **Edit code**. استبدل محتوى المحرر كاملاً بالكود الموجود هنا:
+   https://github.com/mebarkia041-dot/BiBichA/blob/main/worker/src/index.js
+   ثم اضغط **Deploy**.
+5. افتح **Settings** ثم **Variables and Secrets**. أضف متغيرين نصيين:
+   - الاسم `ALLOWED_ORIGIN` والقيمة `https://mebarkia041-dot.github.io`
+   - الاسم `OPENAI_MODEL` والقيمة `gpt-4.1-mini`
+6. من نفس الصفحة أضف **Secret**:
+   - الاسم `OPENAI_API_KEY`
+   - القيمة: مفتاح OpenAI API الخاص بك.
+   احفظ التغييرات. لا تشارك المفتاح مع أي شخص.
+7. انسخ عنوان العامل الذي ينتهي عادةً بـ `.workers.dev`.
+8. أرسل عنوان العامل فقط (ليس المفتاح) حتى نربطه في ملف `api-config.js` بإضافة `/chat` إلى نهايته.
 
-Open the Worker URL followed by `/health` directly in your phone browser. It should show JSON with `"service":"BiBichA AI"` and `"configured":true`. The app also displays the backend connection state under the toolbar. This check only confirms that the secret exists; send a chat message to confirm that the API key, API access, model, and billing are all working.
+## التحقق من الربط
 
-A valid OpenAI API key with API billing/credits is required. The app's speech features use browser speech recognition and speech synthesis; availability and the Arabic voice depend on the phone/browser. Saved memories are currently stored locally on this phone and are sent to the AI only when you chat.
+افتح عنوان العامل متبوعاً بـ `/health` في المتصفح. يجب أن يظهر:
+- `"service":"BiBichA AI"`
+- `"configured":true`
+
+هذا يؤكد أن السر موجود فقط؛ لا يؤكد وحده نجاح محادثة OpenAI. بعد ربط رابط `/chat` في التطبيق، أرسل رسالة تجريبية للتأكد من عمل المفتاح والنموذج والفوترة.
+
+## ما الذي يعمل حالياً؟
+- واجهة المحادثة وسجلها والذاكرة المحلية والصوت تعمل بحسب دعم المتصفح.
+- الذاكرة محفوظة محلياً على الهاتف، وليست مزامنة سحابية.
+- الذكاء الاصطناعي الحقيقي لا يعمل قبل إكمال خطوات Cloudflare وربط عنوان العامل في `api-config.js`.

@@ -76,6 +76,13 @@ class MainActivity : Activity() {
                 }
             }
         }
+        val clearHistory = Button(this).apply {
+            text = "مسح ذاكرة المحادثة المحلية"
+            setOnClickListener {
+                SecureConfig.clearHistory(this@MainActivity)
+                Toast.makeText(this@MainActivity, "تم مسح سجل المحادثة المحفوظ على الهاتف.", Toast.LENGTH_LONG).show()
+            }
+        }
 
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -89,6 +96,7 @@ class MainActivity : Activity() {
             addView(workerUrl)
             addView(token)
             addView(saveConfig)
+            addView(clearHistory)
         }
         setContentView(ScrollView(this).apply { addView(content) })
     }

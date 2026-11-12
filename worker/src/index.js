@@ -23,6 +23,9 @@ export default {
     }
 
     const url = new URL(request.url);
+    if (url.pathname === "/health" && request.method === "GET") {
+      return Response.json({ service: "BiBichA AI", configured: Boolean(env.OPENAI_API_KEY) }, { headers });
+    }
     if (url.pathname !== "/chat" || request.method !== "POST") {
       return new Response("Not found", { status: 404, headers });
     }

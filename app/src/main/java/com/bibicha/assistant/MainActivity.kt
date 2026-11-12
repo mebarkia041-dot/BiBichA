@@ -30,12 +30,19 @@ class MainActivity : Activity() {
             text = "تعيين بيبيشا كمساعد الهاتف"
             setOnClickListener { requestAssistantRole() }
         }
+        val notifications = Button(this).apply {
+            text = "تفعيل قراءة الإشعارات بصوت"
+            setOnClickListener {
+                startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
+            }
+        }
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(24, 24, 24, 24)
             addView(title)
             addView(status)
             addView(activate)
+            addView(notifications)
         })
     }
 

@@ -56,7 +56,7 @@ class MainActivity : Activity() {
             setPadding(24, 36, 24, 16)
         }
         val status = TextView(this).apply {
-            text = "نسخة أولية: أوامر صوتية لفتح التطبيقات وقراءة إشعارات المراسلة بعد تفعيل الإذن."
+            text = "مساعدتك الذكية: محادثة وصوت وذاكرة محلية، مع ميزات الهاتف حسب الأذونات المتاحة."
             textSize = 16f
             setPadding(24, 12, 24, 16)
         }
@@ -335,6 +335,23 @@ class MainActivity : Activity() {
         Thread {
             var connection: HttpURLConnection? = null
             try {
+                // Verify the server has BOTH required secrets before checking the client token.
+                connection = (URL("$base/health").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 10000
+                    readTimeout = 10000
+                    setRequestProperty("Cache-Control", "no-cache")
+                }
+                val healthCode = connection.responseCode
+                val healthBody = (if (healthCode in 200..299) connection.inputStream else connection.errorStream)
+                    ?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                val health = JSONObject(healthBody.ifBlank { "{}" })
+                connection.disconnect()
+                connection = null
+                if (healthCode !in 200..299 || !health.optBoolean("configured", false)) {
+                    throw IllegalStateException("الخادم غير مكتمل الإعداد: تحقق من OPENAI_API_KEY وMOBILE_APP_TOKEN في Cloudflare.")
+                }
+
                 connection = (URL("$base/auth-check").openConnection() as HttpURLConnection).apply {
                     requestMethod = "GET"
                     connectTimeout = 10000
@@ -353,7 +370,7 @@ class MainActivity : Activity() {
                     )
                 }
                 runOnUiThread {
-                    statusView.text = "نجح الاتصال بالخادم ورمز الربط صحيح ✅ جرّب إرسال رسالة لبدء المحادثة."
+                    statusView.text = "الخادم مهيأ ومفتاح الذكاء الاصطناعي موجود ورمز الربط صحيح ✅ جرّب المحادثة."
                 }
             } catch (error: Exception) {
                 runOnUiThread {

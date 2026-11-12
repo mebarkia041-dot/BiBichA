@@ -13,6 +13,8 @@ import android.os.Handler
 import android.os.Looper
 import android.text.InputType
 import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
+import java.util.Locale
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -27,9 +29,19 @@ class MainActivity : Activity() {
     private var chatLogView: TextView? = null
     private var chatStatusView: TextView? = null
     private var chatSendButton: Button? = null
+    private var chatTts: TextToSpeech? = null
+    private var chatTtsReady = false
+    private var speakNextReply = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        chatTts = TextToSpeech(this) { result ->
+            if (result == TextToSpeech.SUCCESS) {
+                val languageResult = chatTts?.setLanguage(Locale("ar", "DZ")) ?: TextToSpeech.LANG_NOT_SUPPORTED
+                if (languageResult < TextToSpeech.LANG_AVAILABLE) chatTts?.setLanguage(Locale("ar"))
+                chatTtsReady = true
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
             checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
@@ -337,16 +349,28 @@ class MainActivity : Activity() {
                     }
                     chatLog.text = lines.joinToString("\n\n")
                     chatStatus.text = "وصل الرد 💜"
+                    if (speakNextReply && chatTtsReady) {
+                        chatTts?.speak(reply, TextToSpeech.QUEUE_FLUSH, null, "bibicha-chat-reply")
+                    }
+                    speakNextReply = false
                 }
             } catch (error: Exception) {
                 runOnUiThread {
                     chatStatus.text = error.message ?: "صار خطأ في الاتصال. عاودي المحاولة."
+                    speakNextReply = false
                 }
             } finally {
                 connection?.disconnect()
                 runOnUiThread { sendButton.isEnabled = true }
             }
         }.start()
+    }
+
+    override fun onDestroy() {
+        chatTts?.stop()
+        chatTts?.shutdown()
+        chatTts = null
+        super.onDestroy()
     }
 
     private fun requestEmergencyLocation() {
@@ -488,6 +512,7 @@ class MainActivity : Activity() {
                 val spoken = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim().orEmpty()
                 if (spoken.isNotBlank()) {
                     chatStatusView?.text = "سمعتك: $spoken"
+                    speakNextReply = true
                     val log = chatLogView
                     val status = chatStatusView
                     val button = chatSendButton

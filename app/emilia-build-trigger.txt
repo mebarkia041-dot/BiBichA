@@ -1,1 +1,1 @@
-Emilia Android build retry after Android SDK package fix.
+Retry Android build with SDK manager configured.

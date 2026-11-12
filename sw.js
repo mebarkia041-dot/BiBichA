@@ -1,4 +1,4 @@
-const CACHE = "bibicha-shell-v12";
+const CACHE = "emilia-shell-v13";
 const FILES = ["./", "./index.html", "./manifest.json", "./api-config.js"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)));

@@ -254,7 +254,9 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
                     setRequestProperty("Authorization", "Bearer $token")
                 }
                 val priorHistory = SecureConfig.history(context)
-                val payload = JSONObject().put("message", message).put("history", priorHistory)
+                val payload = JSONObject().put("message", message)
+                    .put("history", priorHistory)
+                    .put("memory", SecureConfig.memories(context))
                 connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
                 val code = connection.responseCode
                 val stream = if (code in 200..299) connection.inputStream else connection.errorStream

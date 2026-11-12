@@ -44,6 +44,14 @@ test("native chat rejects missing or incorrect bearer token", async () => {
   assert.equal(wrong.status, 401);
 });
 
+test("allowed browser origin still requires the client bearer token", async () => {
+  const response = await worker.fetch(request("/chat", {
+    origin: "https://example.com",
+    body: { message: "سلام" }
+  }), env);
+  assert.equal(response.status, 401);
+});
+
 test("browser chat rejects an origin outside the allowlist", async () => {
   const response = await worker.fetch(request("/chat", {
     origin: "https://attacker.example",

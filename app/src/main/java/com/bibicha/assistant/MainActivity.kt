@@ -126,6 +126,11 @@ class MainActivity : Activity() {
             setOnClickListener { requestEmergencyLocation() }
         }
 
+        val reminderButton = Button(this).apply {
+            text = "⏰ إنشاء تذكير جديد"
+            setOnClickListener { createReminder() }
+        }
+
         val configTitle = TextView(this).apply {
             text = "ربط الذكاء الاصطناعي"
             textSize = 20f
@@ -299,6 +304,7 @@ class MainActivity : Activity() {
             addView(emergencyNumber)
             addView(saveEmergency)
             addView(shareLocation)
+            addView(reminderButton)
             addView(configTitle)
             addView(configHint)
             addView(workerUrl)
@@ -314,6 +320,83 @@ class MainActivity : Activity() {
         }
         setContentView(ScrollView(this).apply { addView(content) })
         if (intent.getBooleanExtra(EXTRA_EMERGENCY_SHARE, false)) requestEmergencyLocation()
+    }
+
+    private fun createReminder() {
+        val input = EditText(this).apply {
+            hint = "مثلاً: موعد الطبيب أو شرب الماء"
+            setSingleLine(true)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("تذكير جديد من إميليا")
+            .setMessage("اكتب واش تحب إميليا تفكرك به.")
+            .setView(input)
+            .setNegativeButton("إلغاء", null)
+            .setPositiveButton("اختيار الوقت") { _, _ ->
+                val title = input.text.toString().trim()
+                if (title.isBlank()) {
+                    Toast.makeText(this, "اكتب محتوى التذكير أولاً.", Toast.LENGTH_LONG).show()
+                    return@setPositiveButton
+                }
+                val now = java.util.Calendar.getInstance()
+                android.app.DatePickerDialog(
+                    this,
+                    { _, year, month, day ->
+                        android.app.TimePickerDialog(
+                            this,
+                            { _, hour, minute ->
+                                val whenToRemind = java.util.Calendar.getInstance().apply {
+                                    set(java.util.Calendar.YEAR, year)
+                                    set(java.util.Calendar.MONTH, month)
+                                    set(java.util.Calendar.DAY_OF_MONTH, day)
+                                    set(java.util.Calendar.HOUR_OF_DAY, hour)
+                                    set(java.util.Calendar.MINUTE, minute)
+                                    set(java.util.Calendar.SECOND, 0)
+                                    set(java.util.Calendar.MILLISECOND, 0)
+                                }
+                                if (whenToRemind.timeInMillis <= System.currentTimeMillis()) {
+                                    Toast.makeText(this, "اختار وقتاً في المستقبل.", Toast.LENGTH_LONG).show()
+                                    return@TimePickerDialog
+                                }
+                                val id = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+                                val reminderIntent = Intent(this, ReminderReceiver::class.java).apply {
+                                    putExtra(ReminderReceiver.EXTRA_TITLE, title)
+                                    putExtra(ReminderReceiver.EXTRA_ID, id)
+                                }
+                                val pending = android.app.PendingIntent.getBroadcast(
+                                    this,
+                                    id,
+                                    reminderIntent,
+                                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                                )
+                                val alarm = getSystemService(android.app.AlarmManager::class.java)
+                                alarm.setAndAllowWhileIdle(
+                                    android.app.AlarmManager.RTC_WAKEUP,
+                                    whenToRemind.timeInMillis,
+                                    pending
+                                )
+                                if (Build.VERSION.SDK_INT >= 33 &&
+                                    checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+                                }
+                                val formatted = java.text.SimpleDateFormat("yyyy/MM/dd - HH:mm", Locale.getDefault())
+                                    .format(whenToRemind.time)
+                                Toast.makeText(this, "تم ضبط التذكير: $formatted 💜", Toast.LENGTH_LONG).show()
+                            },
+                            now.get(java.util.Calendar.HOUR_OF_DAY),
+                            now.get(java.util.Calendar.MINUTE),
+                            true
+                        ).show()
+                    },
+                    now.get(java.util.Calendar.YEAR),
+                    now.get(java.util.Calendar.MONTH),
+                    now.get(java.util.Calendar.DAY_OF_MONTH)
+                ).apply {
+                    datePicker.minDate = System.currentTimeMillis()
+                }.show()
+            }
+            .show()
     }
 
     private fun testWorkerConnection(inputUrl: String, inputToken: String, statusView: TextView) {
@@ -707,5 +790,5 @@ class MainActivity : Activity() {
         }
     }
 
-    companion object { private const val REQUEST_ASSISTANT = 41; private const val REQUEST_CALL_SCREENING = 43; private const val REQUEST_LOCATION = 44; private const val REQUEST_VOICE_CHAT = 45; private const val REQUEST_MICROPHONE = 46; const val EXTRA_EMERGENCY_SHARE = "bibicha_emergency_share" }
+    companion object { private const val REQUEST_ASSISTANT = 41; private const val REQUEST_CALL_SCREENING = 43; private const val REQUEST_LOCATION = 44; private const val REQUEST_VOICE_CHAT = 45; private const val REQUEST_MICROPHONE = 46; private const val REQUEST_NOTIFICATIONS = 47; const val EXTRA_EMERGENCY_SHARE = "bibicha_emergency_share" }
 }

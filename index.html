@@ -49,7 +49,7 @@ async function checkBackend(){
   const healthUrl=endpoint.replace(/\/chat\/?$/,'/health');
   const res=await fetch(healthUrl,{method:'GET',cache:'no-store'});
   const data=await res.json();
-  status.textContent=res.ok&&data.configured?'حالة الاتصال: خادم بيبيشا جاهز ❤️':'حالة الاتصال: الخادم موجود لكن مفتاح API غير مضبوط';
+  status.textContent=res.ok&&data.configured?'حالة الاتصال: الخادم متاح والمفتاح موجود؛ جرّب إرسال رسالة للتأكد من عمل API ❤️':'حالة الاتصال: الخادم موجود لكن مفتاح API غير مضبوط';
  }catch(e){status.textContent='حالة الاتصال: تعذر الوصول إلى الخادم؛ تحقق من الرابط والإنترنت';}
 }
 checkBackend();

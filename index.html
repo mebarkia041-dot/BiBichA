@@ -78,11 +78,12 @@ form.addEventListener('submit',async e=>{
    const endpoint=window.BIBICHA_API_URL||'';
    if(!endpoint){add('bot',reply(v));return;}
    const context=previous.map(x=>({role:x.role==='user'?'user':'assistant',content:x.text}));
-   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:v,history:context,memory:memory.facts})});
-   const data=await response.json();
+   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:v,history:context,memory:memory.facts}),signal:AbortSignal.timeout(35000)});
+   const data=await response.json().catch(()=>({}));
+
    if(!response.ok)throw new Error(data.error||'تعذر الاتصال بالخادم.');
    add('bot',data.reply||'ما وصلنيش رد. عاود المحاولة.');
- }catch(err){add('bot','ما قدرتش نتصل بالخادم حالياً. تأكد من الإنترنت وإعدادات الربط، ثم عاود المحاولة.');}
+ }catch(err){add('bot',err.name==='TimeoutError'?'الخادم تأخر في الرد. تحقق من الاتصال وحاول مرة أخرى.':(err.message||'ما قدرتش نتصل بالخادم حالياً. تحقق من الإنترنت وإعدادات الربط.'));}
  finally{send.disabled=false;send.textContent='إرسال';entry.focus();}
 });
 document.getElementById('clear').addEventListener('click',()=>{history=[];localStorage.removeItem('bibicha-chat');box.innerHTML='';add('bot','رجعنا صفحة جديدة ❤️ ذاكرتي المحفوظة تبقى. أنا بيبيشا، واش نحكيو اليوم؟');});

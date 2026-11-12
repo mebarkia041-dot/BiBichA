@@ -1,4 +1,6 @@
 import test from "node:test";
+import { readFileSync } from "node:fs";
+import vm from "node:vm";
 import assert from "node:assert/strict";
 import worker from "../worker/src/index.js";
 
@@ -229,5 +231,17 @@ test("native Android requests with the mobile token can use the AI endpoint", as
     assert.equal(response.headers.get("Access-Control-Allow-Origin"), null);
   } finally {
     globalThis.fetch = originalFetch;
+  }
+});
+
+
+test("web app inline JavaScript parses without syntax errors", () => {
+  const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)]
+    .map(match => match[1])
+    .filter(source => source.trim());
+  assert.ok(scripts.length > 0, "expected at least one inline script");
+  for (const source of scripts) {
+    assert.doesNotThrow(() => new vm.Script(source, { filename: "index.html" }));
   }
 });

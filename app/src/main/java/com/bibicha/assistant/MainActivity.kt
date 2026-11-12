@@ -60,45 +60,6 @@ class MainActivity : Activity() {
             textSize = 16f
             setPadding(24, 12, 24, 16)
         }
-        val activate = Button(this).apply {
-            text = "تعيين إميليا كمساعد الهاتف"
-            setOnClickListener { requestAssistantRole() }
-        }
-        val notifications = Button(this).apply {
-            text = "تفعيل قراءة الإشعارات بصوت"
-            setOnClickListener {
-                startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
-            }
-        }
-        val callerId = Button(this).apply {
-            text = "تفعيل إعلان المكالمات الواردة"
-            setOnClickListener { requestCallScreeningRole() }
-        }
-
-        val notificationPrivacy = Button(this).apply {
-            fun refreshLabel() {
-                text = if (SecureConfig.notificationReadingEnabled(this@MainActivity)) {
-                    "إيقاف قراءة محتوى الإشعارات"
-                } else {
-                    "السماح لإميليا بقراءة الإشعارات"
-                }
-            }
-            refreshLabel()
-            setOnClickListener {
-                val enabled = !SecureConfig.notificationReadingEnabled(this@MainActivity)
-                SecureConfig.setNotificationReadingEnabled(this@MainActivity, enabled)
-                refreshLabel()
-                Toast.makeText(
-                    this@MainActivity,
-                    if (enabled) "تفعّلت القراءة الصوتية. يلزم أيضاً إذن الإشعارات من إعدادات Android."
-                    else "توقفت إميليا عن قراءة محتوى الإشعارات.",
-                    Toast.LENGTH_LONG
-                ).show()
-                if (enabled) {
-                    startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
-                }
-            }
-        }
         val emergencyTitle = TextView(this).apply {
             text = "مشاركة الموقع في الطوارئ"
             textSize = 20f
@@ -323,10 +284,6 @@ class MainActivity : Activity() {
             addView(sendChat)
             addView(voiceChat)
             addView(status)
-            addView(activate)
-            addView(notifications)
-            addView(notificationPrivacy)
-            addView(callerId)
             addView(emergencyTitle)
             addView(emergencyNumber)
             addView(saveEmergency)

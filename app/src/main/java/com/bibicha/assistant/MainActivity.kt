@@ -13,6 +13,9 @@ import android.widget.Toast
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 42)
+        }
         val title = TextView(this).apply {
             text = "💜 بيبيشا\nمساعدتك الذكية"
             textSize = 28f

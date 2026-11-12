@@ -1,6 +1,6 @@
-# ربط الذكاء الاصطناعي الحقيقي في BiBichA
+# ربط الذكاء الاصطناعي الحقيقي في Emilia
 
-هذا الدليل مخصص لإعداد خادم بيبيشا على Cloudflare. رابط المشروع مضبوط على:
+هذا الدليل مخصص لإعداد خادم إميليا على Cloudflare. رابط المشروع مضبوط على:
 
 `https://bibicha.mebarkia041.workers.dev`
 
@@ -37,7 +37,7 @@ npx wrangler secret put MOBILE_APP_TOKEN --config worker/wrangler.toml
 افتح `https://bibicha.mebarkia041.workers.dev/health`. النتيجة المتوقعة:
 
 ```json
-{"service":"BiBichA AI","configured":true}
+{"service":"Emilia AI","configured":true}
 ```
 
 هذا يعني أن Secret باسم `OPENAI_API_KEY` موجود فقط؛ لا يثبت وحده أن المفتاح صالح أو أن الفوترة مفعّلة. الاختبار النهائي هو إرسال رسالة من التطبيق.

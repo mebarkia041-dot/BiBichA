@@ -30,6 +30,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
+      - name: Run Android lint checks
+        run: gradle --no-daemon :app:lintDebug
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BiBichA-android-lint-report
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Upload debug APK

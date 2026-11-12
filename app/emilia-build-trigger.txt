@@ -1,1 +1,1 @@
-Build Emilia Android APK
+Emilia Android build retry after Android SDK package fix.

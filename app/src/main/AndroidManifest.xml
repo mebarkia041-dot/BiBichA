@@ -8,6 +8,12 @@
         <package android:name="com.android.chrome" />
         <package android:name="com.google.android.apps.messaging" />
         <package android:name="com.google.android.dialer" />
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
     </queries>
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />

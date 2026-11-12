@@ -159,7 +159,8 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
                     setRequestProperty("Content-Type", "application/json; charset=utf-8")
                     setRequestProperty("Authorization", "Bearer $token")
                 }
-                val payload = JSONObject().put("message", message).put("history", org.json.JSONArray())
+                val priorHistory = SecureConfig.history(context)
+                val payload = JSONObject().put("message", message).put("history", priorHistory)
                 connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
                 val code = connection.responseCode
                 val stream = if (code in 200..299) connection.inputStream else connection.errorStream
@@ -169,6 +170,10 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
                     json.optString("reply", "ما وصلنيش رد واضح.")
                 } else {
                     json.optString("error", "تعذر الاتصال بالخادم. تحقق من إعدادات الربط.")
+                }
+                if (code in 200..299) {
+                    SecureConfig.addHistory(context, "user", message)
+                    SecureConfig.addHistory(context, "assistant", answer)
                 }
                 mainHandler.post { if (sessionActive) say(answer) }
             } catch (_: Exception) {

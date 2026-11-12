@@ -24,6 +24,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
     private var speaker: TextToSpeech? = null
     private var statusView: TextView? = null
     private var speakerReady = false
+    private var recognitionErrorCount = 0
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile private var sessionActive = false
 
@@ -68,6 +69,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
                     statusView?.text = "💜 بيبيشا\nراني نسمع..."
                 }
                 override fun onBeginningOfSpeech() {
+                    recognitionErrorCount = 0
                     statusView?.text = "نسمع في كلامك..."
                 }
                 override fun onRmsChanged(rmsdB: Float) {}
@@ -76,12 +78,28 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
                     statusView?.text = "لحظة نفهمك..."
                 }
                 override fun onError(error: Int) {
-                    statusView?.text = "ما سمعتكش مليح. عاود ناديني."
-                    say("ما سمعتكش مليح، عاود ناديني.")
+                    if (!sessionActive) return
+                    // Retry only a small number of times; never leave a hidden endless listener running.
+                    if (error != SpeechRecognizer.ERROR_CLIENT &&
+                        error != SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS &&
+                        recognitionErrorCount < 2
+                    ) {
+                        recognitionErrorCount++
+                        statusView?.text = "ما سمعتكش مليح، نعاود نحاول..."
+                        mainHandler.postDelayed({ if (sessionActive) startListening() }, 900L)
+                    } else {
+                        statusView?.text = "ما قدرتش نسمعك. اضغط للاستدعاء وعاود."
+                        say("ما قدرتش نسمعك، عاود استدعيني كي تكون واجد.")
+                    }
                 }
                 override fun onResults(results: Bundle?) {
-                    val spoken = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
-                    handleCommand(spoken)
+                    recognitionErrorCount = 0
+                    val spoken = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty().trim()
+                    if (spoken.isBlank()) {
+                        say("ما وصلني حتى كلام واضح. عاود قولّي واش تحتاج.")
+                    } else {
+                        handleCommand(spoken)
+                    }
                 }
                 override fun onPartialResults(partialResults: Bundle?) {}
                 override fun onEvent(eventType: Int, params: Bundle?) {}
@@ -171,6 +189,41 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
                 return
             }
             say("ما لقيتش هذا التطبيق مثبت في هاتفك.")
+            return
+        }
+        val systemAction: Intent? = when {
+            listOf("منبه", "المنبه", "ساعة", "alarm").any { command.contains(it) } ->
+                Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS)
+            listOf("التقويم", "رزنامة", "calendar").any { command.contains(it) } ->
+                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CALENDAR)
+            listOf("جهات الاتصال", "كونتاكت", "contacts").any { command.contains(it) } ->
+                Intent(Intent.ACTION_VIEW, android.provider.ContactsContract.Contacts.CONTENT_URI)
+            listOf("واي فاي", "wifi", "ويفي").any { command.contains(it) } ->
+                Intent(android.provider.Settings.ACTION_WIFI_SETTINGS)
+            listOf("بلوتوث", "bluetooth").any { command.contains(it) } ->
+                Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+            listOf("الصوت", "الصوتيات", "volume").any { command.contains(it) } ->
+                Intent(android.provider.Settings.ACTION_SOUND_SETTINGS)
+            listOf("البطارية", "battery").any { command.contains(it) } ->
+                Intent(android.provider.Settings.ACTION_BATTERY_SAVER_SETTINGS)
+            listOf("ابحثي في الانترنت", "ابحث في الانترنت", "فتشي في غوغل", "search web").any { command.contains(it) } -> {
+                val query = raw.substringAfterLast("عن", raw).trim()
+                Intent(Intent.ACTION_WEB_SEARCH).putExtra(android.app.SearchManager.QUERY, query)
+            }
+            else -> null
+        }
+        if (systemAction != null) {
+            try {
+                systemAction.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                if (systemAction.resolveActivity(context.packageManager) != null) {
+                    context.startActivity(systemAction)
+                    say("حاضر، نفتحلك المطلوب.")
+                } else {
+                    say("هذا الخيار ما هوش متاح في هاتفك.")
+                }
+            } catch (_: Exception) {
+                say("ما قدرتش نفتح هذا الخيار. جرّب من إعدادات الهاتف.")
+            }
             return
         }
         if (command.contains("إعدادات") || command.contains("settings")) {

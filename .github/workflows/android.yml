@@ -3,10 +3,9 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "emilia-source.tar.gz.b64"
       - "app/**"
-      - "*.gradle"
-      - "settings.gradle"
+      - "*.gradle.kts"
+      - "settings.gradle.kts"
       - ".github/workflows/android.yml"
   workflow_dispatch:
 permissions:
@@ -20,16 +19,19 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-      - name: Restore Emilia Android source
-        run: |
-          base64 -d emilia-source.tar.gz.b64 > /tmp/emilia.tar.gz
-          tar -xzf /tmp/emilia.tar.gz
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
+      - name: Verify APK
+        run: |
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          file app/build/outputs/apk/debug/app-debug.apk
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:

@@ -1,6 +1,6 @@
 # إعداد اختياري لخدمة الذكاء الاصطناعي السحابية في إميليا
 
-هذا الإعداد اختياري بالكامل. إميليا تعمل بالوظائف والردود المحلية المجانية دون Cloudflare أو بطاقة أو مفتاح OpenAI. الردود المحلية محدودة وليست بديلاً كاملاً عن نموذج لغوي متقدم. إذا أردت لاحقاً خدمة سحابية، اتبع الخطوات التالية وقد تنطبق عليها تكاليف أو حدود مزود الخدمة. رابط المشروع مضبوط على:
+إميليا تدعم الآن Cloudflare Workers AI كخيار سحابي دون مفتاح OpenAI أو بطاقة بنكية، ضمن الحصة المجانية اليومية وحدود حساب Cloudflare. الردود المحلية تبقى متاحة عند عدم إعداد الخدمة لكنها محدودة. يمكن اختيار OpenAI بدلاً من ذلك، وقد يترتب عليه دفع. رابط المشروع مضبوط على:
 
 `https://bibicha.mebarkia041.workers.dev`
 
@@ -11,9 +11,9 @@
 3. من **Edit code** استعمل الملف `worker/src/index.js` الموجود في المستودع، ثم اضغط **Deploy**.
 4. افتح **Settings → Variables and Secrets** وأضف:
    - Text variable: `ALLOWED_ORIGIN` = `https://mebarkia041-dot.github.io,https://bibicha.mebarkia041.workers.dev`
-   - Text variable: `OPENAI_MODEL` = `gpt-4.1-mini`
-   - Secret: `OPENAI_API_KEY` = مفتاح OpenAI API الخاص بك.
+   - فعّل ربط **Workers AI** للعامل (binding name: `AI`). ملف `worker/wrangler.toml` يتضمن هذا الربط عند النشر عبر Wrangler.
    - Secret: `MOBILE_APP_TOKEN` = رمز عشوائي طويل لا يقل عن 32 حرفاً.
+   - لا تحتاج `OPENAI_API_KEY` عند استخدام Workers AI. يبقى اختيارياً فقط إذا أردت استعمال OpenAI بدلاً منه.
 5. لا ترسل أي مفتاح أو رمز في المحادثة، ولا تضع `OPENAI_API_KEY` في GitHub أو الهاتف.
 6. في تطبيق Android أدخل رابط Worker أعلاه، ثم أدخل نفس `MOBILE_APP_TOKEN` الذي وضعته في Cloudflare. في واجهة الويب اضغط زر **ربط آمن** وأدخل الرمز نفسه؛ يُحفظ في `sessionStorage` لهذه الجلسة فقط ولا يُضمّن في ملفات الموقع.
 
@@ -25,10 +25,9 @@
 npx wrangler deploy --config worker/wrangler.toml
 ```
 
-ثم أضف الأسرار في Cloudflare (لا تضعها في ملف TOML):
+ثم أضف رمز الربط السري في Cloudflare (لا تضعه في ملف TOML):
 
 ```bash
-npx wrangler secret put OPENAI_API_KEY --config worker/wrangler.toml
 npx wrangler secret put MOBILE_APP_TOKEN --config worker/wrangler.toml
 ```
 
@@ -40,7 +39,7 @@ npx wrangler secret put MOBILE_APP_TOKEN --config worker/wrangler.toml
 {"service":"Emilia AI","configured":true}
 ```
 
-تعني `configured: true` أن السرّين `OPENAI_API_KEY` و`MOBILE_APP_TOKEN` موجودان معاً؛ لا تثبت وحدها أن مفتاح OpenAI صالح أو أن الفوترة مفعّلة. يجب أيضاً أن ينجح `/auth-check` بالرمز الصحيح، ثم إرسال رسالة فعلية من التطبيق.
+تعني `configured: true` أن ربط Workers AI أو مفتاح OpenAI متاح، وأن `MOBILE_APP_TOKEN` موجود. يجب أيضاً اختبار رسالة فعلية من التطبيق للتأكد من استجابة النموذج. يجب أيضاً أن ينجح `/auth-check` بالرمز الصحيح، ثم إرسال رسالة فعلية من التطبيق.
 
 ## الوظائف والحدود الحالية
 

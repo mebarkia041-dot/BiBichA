@@ -26,7 +26,7 @@ object SecureConfig {
     fun save(context: Context, workerUrl: String, token: String) {
         val normalizedUrl = workerUrl.trim().trimEnd('/')
         require(normalizedUrl.startsWith("https://") && normalizedUrl.endsWith(".workers.dev")) {
-            "رابط خادم بيبيشا غير صالح."
+            "رابط خادم إميليا غير صالح."
         }
         require(token.trim().length >= 32) { "رمز الربط يجب أن يكون 32 حرفاً على الأقل." }
         val encrypted = encrypt(token.trim())

@@ -9,10 +9,12 @@ const env = (extra = {}) => ({
   ALLOWED_ORIGIN: ORIGIN + ",https://bibicha.mebarkia041.workers.dev",
   OPENAI_API_KEY: "test-secret",
   OPENAI_MODEL: "gpt-test",
+  MOBILE_APP_TOKEN: "mobile-test-token",
   ...extra
 });
 const request = (path, { method = "GET", origin, headers = {}, body } = {}) => {
   const h = new Headers(headers);
+  if (!h.has("Authorization")) h.set("Authorization", "Bearer mobile-test-token");
   if (origin) h.set("Origin", origin);
   return new Request("https://worker.test" + path, {
     method,
@@ -218,7 +220,7 @@ test("preflight from an unapproved origin is rejected", async () => {
 test("native Android requests require the configured bearer token", async () => {
   const response = await worker.fetch(request("/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Authorization": "" },
     body: JSON.stringify({ message: "سلام" })
   }), env());
   assert.equal(response.status, 401);

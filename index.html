@@ -18,14 +18,14 @@ header h1{margin:0;font-size:27px}header p{margin:5px 0 0;font-size:13px;opacity
 form{display:flex;gap:8px;padding:12px;border-top:1px solid #eee}
 input{flex:1;min-width:0;border:1px solid #ddd;border-radius:24px;padding:13px;font-size:16px;outline:none}
 button{border:0;border-radius:24px;padding:0 16px;background:#8b5cf6;color:#fff;font-size:15px;cursor:pointer}
-.note{font-size:11px;color:#8a8195;text-align:center;padding:0 10px 10px}
+.note{font-size:11px;color:#8a8195;text-align:center;padding:0 10px 10px}\n#connection{font-size:12px;text-align:center;padding:6px;color:#8a8195;background:#faf8ff}
 </style></head>
 <body><main class="app">
 <header><h1>💜 BiBichA</h1><p>بيبيشا • سارة • وحيدتي</p></header>
 <div class="toolbar"><button type="button" id="install" hidden>📲 تثبيت بيبيشا</button><button type="button" id="voice">🎙️ تحدث</button><button type="button" id="speak">🔊 قراءة الرد</button><button type="button" id="autoVoice">🔈 الصوت التلقائي: متوقف</button><button type="button" id="memoryBtn">🧠 الذاكرة</button><button type="button" id="clear">مسح المحادثة</button></div>
 <section id="messages" aria-live="polite"></section>
 <form id="chat"><input id="entry" placeholder="اكتب رسالتك هنا..." autocomplete="off" required><button type="submit">إرسال</button></form>
-<div class="note">تحفظ المحادثة على هذا الهاتف. دون إعداد الخادم الآمن، تعمل بيبيشا بالردود التجريبية؛ بعد ربط الخادم تتحدث معك بالذكاء الاصطناعي عبر الإنترنت.</div>
+<div id="connection" role="status">حالة الاتصال: جاري الفحص...</div>\n<div class="note">تحفظ المحادثة على هذا الهاتف. دون إعداد الخادم الآمن، تعمل بيبيشا بالردود التجريبية؛ بعد ربط الخادم تتحدث معك بالذكاء الاصطناعي عبر الإنترنت.</div>
 </main>
 <script src="./api-config.js"></script>
 <script>
@@ -39,6 +39,18 @@ let autoVoice=localStorage.getItem('bibicha-auto-voice')==='1';
 const autoVoiceBtn=document.getElementById('autoVoice');
 function refreshVoiceButton(){autoVoiceBtn.textContent=autoVoice?'🔊 الصوت التلقائي: يعمل':'🔈 الصوت التلقائي: متوقف';}
 refreshVoiceButton();
+async function checkBackend(){
+ const endpoint=window.BIBICHA_API_URL||'';
+ const status=document.getElementById('connection');
+ if(!endpoint){status.textContent='حالة الاتصال: الذكاء الاصطناعي غير مربوط بعد';return;}
+ try{
+  const healthUrl=endpoint.replace(/\\/chat\\/?$/,'/health');
+  const res=await fetch(healthUrl,{method:'GET',cache:'no-store'});
+  const data=await res.json();
+  status.textContent=res.ok&&data.configured?'حالة الاتصال: خادم بيبيشا جاهز ❤️':'حالة الاتصال: الخادم موجود لكن مفتاح API غير مضبوط';
+ }catch(e){status.textContent='حالة الاتصال: تعذر الوصول إلى الخادم؛ تحقق من الرابط والإنترنت';}
+}
+checkBackend();
 function say(text){if(!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(text);u.lang='ar-DZ';u.rate=.94;u.pitch=1.08;speechSynthesis.cancel();speechSynthesis.speak(u);}
 autoVoiceBtn.addEventListener('click',()=>{autoVoice=!autoVoice;localStorage.setItem('bibicha-auto-voice',autoVoice?'1':'0');refreshVoiceButton();if(autoVoice)say('الصوت التلقائي راه يخدم الآن ❤️');});
 function saveMemory(){try{localStorage.setItem('bibicha-memory',JSON.stringify(memory));}catch(e){}}

@@ -1,11 +1,6 @@
 name: Deploy Emilia AI Worker
 on:
   workflow_dispatch:
-  push:
-    branches: ["main"]
-    paths:
-      - "worker/**"
-      - ".github/workflows/deploy-worker.yml"
 
 permissions:
   contents: read

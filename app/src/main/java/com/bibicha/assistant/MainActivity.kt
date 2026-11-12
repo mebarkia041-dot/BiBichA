@@ -466,6 +466,13 @@ class MainActivity : Activity() {
                 Toast.makeText(this, "لازم تسمح بالموقع باش نحضّر رسالة الطوارئ.", Toast.LENGTH_LONG).show()
             }
         }
+        if (requestCode == REQUEST_MICROPHONE) {
+            if (grantResults.any { it == android.content.pm.PackageManager.PERMISSION_GRANTED }) {
+                startVoiceInput()
+            } else {
+                chatStatusView?.text = "الميكروفون ما تفعلش. تقدر تسمح به من إعدادات التطبيق."
+            }
+        }
     }
 
     private fun requestCallScreeningRole() {

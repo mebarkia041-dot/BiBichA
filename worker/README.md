@@ -17,6 +17,6 @@ The GitHub Pages app is static. This Worker securely calls the OpenAI API. The A
 
 ## Verify
 
-Open the Worker URL followed by `/health`. It should return JSON with `"service":"BiBichA AI"` and `"configured":true`. This only confirms that the secret exists; a real chat test confirms API access and billing are working.
+Open the Worker URL followed by `/health` directly in your phone browser. It should show JSON with `"service":"BiBichA AI"` and `"configured":true`. The app also displays the backend connection state under the toolbar. This check only confirms that the secret exists; send a chat message to confirm that the API key, API access, model, and billing are all working.
 
 A valid OpenAI API key with API billing/credits is required. The app's speech features use browser speech recognition and speech synthesis; availability and the Arabic voice depend on the phone/browser. Saved memories are currently stored locally on this phone and are sent to the AI only when you chat.

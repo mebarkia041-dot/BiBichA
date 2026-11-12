@@ -18,6 +18,9 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -174,10 +177,59 @@ class MainActivity : Activity() {
             }
         }
 
+        val chatTitle = TextView(this).apply {
+            text = "محادثة بيبيشا 💜"
+            textSize = 22f
+            setPadding(8, 24, 8, 8)
+        }
+        val chatStatus = TextView(this).apply {
+            text = "اكتبي رسالة لبيبيشا بعد إعداد رابط الخادم."
+            textSize = 14f
+            setPadding(8, 4, 8, 8)
+        }
+        val chatLog = TextView(this).apply {
+            textSize = 16f
+            setPadding(12, 12, 12, 12)
+            setTextIsSelectable(true)
+        }
+        val chatInput = EditText(this).apply {
+            hint = "اكتبي رسالتك هنا..."
+            minLines = 2
+            maxLines = 4
+        }
+        val sendChat = Button(this).apply {
+            text = "إرسال إلى بيبيشا"
+            setOnClickListener {
+                val message = chatInput.text.toString().trim()
+                if (message.isBlank()) {
+                    chatInput.error = "اكتبي رسالة أولاً"
+                } else {
+                    chatInput.text?.clear()
+                    sendChatMessage(message, chatLog, chatStatus, this)
+                }
+            }
+        }
+        fun refreshChatLog() {
+            val history = SecureConfig.history(this@MainActivity)
+            val lines = ArrayList<String>()
+            for (index in 0 until history.length()) {
+                val item = history.optJSONObject(index) ?: continue
+                val role = if (item.optString("role") == "user") "أنت" else "بيبيشا"
+                lines.add("$role: ${item.optString("content")}")
+            }
+            chatLog.text = lines.joinToString("\n\n").ifBlank { "مازال ما بديناش المحادثة. قوليلي سلام 💜" }
+        }
+        refreshChatLog()
+
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(20, 16, 20, 24)
             addView(title)
+            addView(chatTitle)
+            addView(chatStatus)
+            addView(chatLog)
+            addView(chatInput)
+            addView(sendChat)
             addView(status)
             addView(activate)
             addView(notifications)
@@ -200,6 +252,64 @@ class MainActivity : Activity() {
         }
         setContentView(ScrollView(this).apply { addView(content) })
         if (intent.getBooleanExtra(EXTRA_EMERGENCY_SHARE, false)) requestEmergencyLocation()
+    }
+
+    private fun sendChatMessage(message: String, chatLog: TextView, chatStatus: TextView, sendButton: Button) {
+        val worker = SecureConfig.workerUrl(this)
+        val token = try { SecureConfig.token(this) } catch (_: Exception) { "" }
+        if (worker.isBlank() || token.isBlank()) {
+            chatStatus.text = "أكملي إعداد رابط Worker ورمز Android أولاً."
+            return
+        }
+        sendButton.isEnabled = false
+        chatStatus.text = "بيبيشا راهي تكتبلك..."
+        Thread {
+            var connection: HttpURLConnection? = null
+            try {
+                connection = (URL("$worker/chat").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    connectTimeout = 15000
+                    readTimeout = 30000
+                    doOutput = true
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                    setRequestProperty("Authorization", "Bearer $token")
+                }
+                val payload = JSONObject()
+                    .put("message", message)
+                    .put("history", SecureConfig.history(this))
+                    .put("memory", SecureConfig.memories(this))
+                connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
+                val code = connection.responseCode
+                val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+                val body = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                val json = JSONObject(body.ifBlank { "{}" })
+                if (code !in 200..299) {
+                    throw IllegalStateException(json.optString("error", "تعذر الاتصال بالخادم ($code)."))
+                }
+                val reply = json.optString("reply").trim()
+                if (reply.isBlank()) throw IllegalStateException("ما وصلنيش رد واضح من بيبيشا.")
+                SecureConfig.addHistory(this, "user", message)
+                SecureConfig.addHistory(this, "assistant", reply)
+                runOnUiThread {
+                    val history = SecureConfig.history(this)
+                    val lines = ArrayList<String>()
+                    for (index in 0 until history.length()) {
+                        val item = history.optJSONObject(index) ?: continue
+                        val role = if (item.optString("role") == "user") "أنت" else "بيبيشا"
+                        lines.add("$role: ${item.optString("content")}")
+                    }
+                    chatLog.text = lines.joinToString("\n\n")
+                    chatStatus.text = "وصل الرد 💜"
+                }
+            } catch (error: Exception) {
+                runOnUiThread {
+                    chatStatus.text = error.message ?: "صار خطأ في الاتصال. عاودي المحاولة."
+                }
+            } finally {
+                connection?.disconnect()
+                runOnUiThread { sendButton.isEnabled = true }
+            }
+        }.start()
     }
 
     private fun requestEmergencyLocation() {

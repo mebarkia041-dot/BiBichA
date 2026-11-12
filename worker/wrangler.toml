@@ -5,3 +5,6 @@ compatibility_date = "2026-11-12"
 [vars]
 ALLOWED_ORIGIN = "https://mebarkia041-dot.github.io,https://bibicha.mebarkia041.workers.dev"
 OPENAI_MODEL = "gpt-4.1-mini"
+
+[ai]
+binding = "AI"

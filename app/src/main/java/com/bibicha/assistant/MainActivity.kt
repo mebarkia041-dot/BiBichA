@@ -1,6 +1,7 @@
 package com.bibicha.assistant
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.app.role.RoleManager
 import android.content.Intent
 import android.location.Location
@@ -165,9 +166,16 @@ class MainActivity : Activity() {
         val clearHistory = Button(this).apply {
             text = "مسح ذاكرة المحادثة المحلية"
             setOnClickListener {
-                SecureConfig.clearHistory(this@MainActivity)
-                chatLogView?.text = "تم مسح المحادثة. نبدأو من جديد 💜"
-                Toast.makeText(this@MainActivity, "تم مسح سجل المحادثة المحفوظ على الهاتف.", Toast.LENGTH_LONG).show()
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("مسح سجل المحادثة؟")
+                    .setMessage("سيتم حذف المحادثات المحفوظة محلياً على هذا الهاتف.")
+                    .setNegativeButton("إلغاء", null)
+                    .setPositiveButton("مسح") { _, _ ->
+                        SecureConfig.clearHistory(this@MainActivity)
+                        chatLogView?.text = "تم مسح المحادثة. نبدأو من جديد 💜"
+                        Toast.makeText(this@MainActivity, "تم مسح سجل المحادثة المحفوظ على الهاتف.", Toast.LENGTH_LONG).show()
+                    }
+                    .show()
             }
         }
 
@@ -192,11 +200,32 @@ class MainActivity : Activity() {
                 }
             }
         }
+        val viewMemory = Button(this).apply {
+            text = "عرض المعلومات المحفوظة"
+            setOnClickListener {
+                val saved = SecureConfig.memories(this@MainActivity)
+                val details = (0 until saved.length()).mapNotNull { index ->
+                    saved.optString(index).takeIf { it.isNotBlank() }?.let { "• $it" }
+                }.joinToString("\\n")
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("ذاكرة بيبيشا")
+                    .setMessage(details.ifBlank { "ما حفظنا حتى معلومة بعد." })
+                    .setPositiveButton("إغلاق", null)
+                    .show()
+            }
+        }
         val clearMemory = Button(this).apply {
             text = "مسح الذاكرة الدائمة"
             setOnClickListener {
-                SecureConfig.clearMemories(this@MainActivity)
-                Toast.makeText(this@MainActivity, "تم مسح الذاكرة الدائمة.", Toast.LENGTH_LONG).show()
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle("مسح الذاكرة الدائمة؟")
+                    .setMessage("سيتم حذف كل المعلومات التي اخترت حفظها.")
+                    .setNegativeButton("إلغاء", null)
+                    .setPositiveButton("مسح") { _, _ ->
+                        SecureConfig.clearMemories(this@MainActivity)
+                        Toast.makeText(this@MainActivity, "تم مسح الذاكرة الدائمة.", Toast.LENGTH_LONG).show()
+                    }
+                    .show()
             }
         }
 
@@ -280,6 +309,7 @@ class MainActivity : Activity() {
             addView(memoryTitle)
             addView(memoryInput)
             addView(saveMemory)
+            addView(viewMemory)
             addView(clearMemory)
         }
         setContentView(ScrollView(this).apply { addView(content) })

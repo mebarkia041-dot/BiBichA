@@ -20,7 +20,7 @@ export default {
     if (url.pathname === "/health" && request.method === "GET") {
       const healthHeaders = validWebOrigin ? corsHeaders(origin) : {};
       return Response.json(
-        { service: "Emilia AI", configured: Boolean(env.OPENAI_API_KEY) },
+        { service: "Emilia AI", configured: Boolean(env.OPENAI_API_KEY && env.MOBILE_APP_TOKEN) },
         { headers: { ...healthHeaders, "Cache-Control": "no-store" } }
       );
     }

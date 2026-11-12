@@ -37,9 +37,9 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         chatTts = TextToSpeech(this) { result ->
             if (result == TextToSpeech.SUCCESS) {
-                val languageResult = chatTts?.setLanguage(Locale("ar", "DZ")) ?: TextToSpeech.LANG_NOT_SUPPORTED
-                if (languageResult < TextToSpeech.LANG_AVAILABLE) chatTts?.setLanguage(Locale("ar"))
-                chatTtsReady = true
+                val arabic = chatTts?.setLanguage(Locale("ar", "DZ")) ?: TextToSpeech.LANG_NOT_SUPPORTED
+                val language = if (arabic < TextToSpeech.LANG_AVAILABLE) chatTts?.setLanguage(Locale("ar")) ?: TextToSpeech.LANG_NOT_SUPPORTED else arabic
+                chatTtsReady = language >= TextToSpeech.LANG_AVAILABLE
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&

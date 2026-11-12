@@ -1,7 +1,7 @@
 {
-  "name": "BiBichA",
-  "short_name": "BiBichA",
-  "description": "مساعدك الذكي بيبيشا",
+  "name": "Emilia",
+  "short_name": "Emilia",
+  "description": "مساعدك الذكي إميليا",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./",

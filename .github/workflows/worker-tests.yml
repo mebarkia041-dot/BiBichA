@@ -19,4 +19,5 @@ jobs:
         with:
           node-version: "22"
       - name: Run Worker tests
-        run: node --test worker/test/*.test.mjs
+        working-directory: worker
+        run: npm test

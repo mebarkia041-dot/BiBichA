@@ -258,13 +258,17 @@ test("web app and service worker JavaScript parse and normalize the Worker URL",
   const apiEnd = source.indexOf("function chatEndpoint()", apiStart);
   assert.ok(apiStart >= 0 && apiEnd > apiStart, "expected apiBase helper");
   const apiBaseCode = source.slice(apiStart, apiEnd) + "; apiBase();";
+  const apiConfig = readFileSync(new URL("../api-config.js", import.meta.url), "utf8");
+  assert.doesNotThrow(() => new vm.Script(apiConfig, { filename: "api-config.js" }));
+  const configWindow = {};
+  vm.runInNewContext(apiConfig, { window: configWindow });
+  assert.equal(configWindow.BIBICHA_API_URL, "https://bibicha.mebarkia041.workers.dev");
+
   const normalized = vm.runInNewContext(apiBaseCode, {
-    window: { BIBICHA_API_URL: "https://bibicha-ai.workers.dev/chat/" }
+    window: { BIBICHA_API_URL: configWindow.BIBICHA_API_URL + "/chat/" }
   });
-  assert.equal(normalized, "https://bibicha-ai.workers.dev");
+  assert.equal(normalized, "https://bibicha.mebarkia041.workers.dev");
 
   const serviceWorker = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
   assert.doesNotThrow(() => new vm.Script(serviceWorker, { filename: "sw.js" }));
-  const apiConfig = readFileSync(new URL("../api-config.js", import.meta.url), "utf8");
-  assert.doesNotThrow(() => new vm.Script(apiConfig, { filename: "api-config.js" }));
 });

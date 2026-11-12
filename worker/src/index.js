@@ -25,21 +25,21 @@ export default {
       );
     }
 
-    // Browser clients are restricted by CORS. Native Android clients must present
-    // a separate secret token; CORS alone is never treated as authentication.
-    const authorization = request.headers.get("Authorization") || "";
-    const validNativeToken = Boolean(env.MOBILE_APP_TOKEN && authorization === `Bearer ${env.MOBILE_APP_TOKEN}`);
+    // CORS controls browser access; every chat client (web or native) must
+    // additionally prove possession of the user-configured token.
     if (origin && !validWebOrigin) {
       return new Response("Origin not allowed", { status: 403, headers: { "Cache-Control": "no-store" } });
     }
-    if (!origin && !validNativeToken) {
-      return new Response("Unauthorized", { status: 401, headers: { "Cache-Control": "no-store" } });
-    }
-
     const headers = validWebOrigin
       ? corsHeaders(origin)
       : { "Cache-Control": "no-store" };
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
+
+    const authorization = request.headers.get("Authorization") || "";
+    const validClientToken = Boolean(env.MOBILE_APP_TOKEN && authorization === `Bearer ${env.MOBILE_APP_TOKEN}`);
+    if (!validClientToken) {
+      return Response.json({ error: "يلزم رمز ربط صحيح للوصول إلى بيبيشا." }, { status: 401, headers });
+    }
     if (url.pathname !== "/chat" || request.method !== "POST") return new Response("Not found", { status: 404, headers });
     if (!request.headers.get("Content-Type")?.toLowerCase().includes("application/json")) {
       return Response.json({ error: "صيغة الطلب غير مدعومة." }, { status: 415, headers });

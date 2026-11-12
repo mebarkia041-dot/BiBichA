@@ -29,19 +29,19 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-      - name: Build debug APK
-        run: gradle --no-daemon :app:assembleDebug
-      - name: Verify APK
+      - name: Build release APK
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Verify signed release APK
         run: |
-          test -s app/build/outputs/apk/debug/app-debug.apk
-          file app/build/outputs/apk/debug/app-debug.apk
-          $ANDROID_HOME/build-tools/35.0.0/aapt dump badging app/build/outputs/apk/debug/app-debug.apk
-          $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose app/build/outputs/apk/debug/app-debug.apk
-          sha256sum app/build/outputs/apk/debug/app-debug.apk
-      - name: Upload installable APK
+          test -s app/build/outputs/apk/release/app-release.apk
+          file app/build/outputs/apk/release/app-release.apk
+          $ANDROID_HOME/build-tools/35.0.0/aapt dump badging app/build/outputs/apk/release/app-release.apk
+          $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose app/build/outputs/apk/release/app-release.apk
+          sha256sum app/build/outputs/apk/release/app-release.apk
+      - name: Upload installable release APK
         uses: actions/upload-artifact@v4
         with:
-          name: Emilia-Android-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Emilia-Android-Release-APK
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30

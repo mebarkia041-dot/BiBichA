@@ -95,13 +95,23 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
             listOf("واتساب", "whatsapp") to "com.whatsapp",
             listOf("فيسبوك", "facebook") to "com.facebook.katana",
             listOf("انستغرام", "انستجرام", "instagram") to "com.instagram.android",
-            listOf("كاميرا", "camera") to "com.android.camera",
             listOf("يوتيوب", "youtube") to "com.google.android.youtube",
             listOf("خرائط", "maps", "غوغل مابس") to "com.google.android.apps.maps",
             listOf("كروم", "chrome", "متصفح") to "com.android.chrome",
             listOf("رسائل", "messages", "ميساج") to "com.google.android.apps.messaging",
             listOf("الهاتف", "اتصال", "phone") to "com.google.android.dialer"
         )
+        if (command.contains("كاميرا") || command.contains("تصوير") || command.contains("camera")) {
+            val camera = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+            if (camera.resolveActivity(context.packageManager) != null) {
+                camera.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(camera)
+                say("حاضر، نفتحلك الكاميرا.")
+            } else {
+                say("ما قدرتش نلقى تطبيق كاميرا متاح.")
+            }
+            return
+        }
         val target = targets.firstOrNull { pair -> pair.first.any { command.contains(it) } }
         if (target != null) {
             val launch = context.packageManager.getLaunchIntentForPackage(target.second)

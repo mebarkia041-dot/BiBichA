@@ -24,8 +24,6 @@ class BibichaCallScreeningService : CallScreeningService() {
         val response = CallResponse.Builder()
             .setDisallowCall(false)
             .setRejectCall(false)
-            .setSkipCallLog(false)
-            .setSkipNotification(false)
             .build()
         respondToCall(callDetails, response)
 

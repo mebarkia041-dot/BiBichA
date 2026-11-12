@@ -38,6 +38,13 @@ export default {
     if (url.pathname !== "/chat" || request.method !== "POST") {
       return new Response("Not found", { status: 404, headers });
     }
+    if (!request.headers.get("Content-Type")?.toLowerCase().includes("application/json")) {
+      return Response.json({ error: "صيغة الطلب غير مدعومة." }, { status: 415, headers });
+    }
+    const contentLength = Number(request.headers.get("Content-Length") || 0);
+    if (contentLength > 64000) {
+      return Response.json({ error: "الطلب كبير بزاف." }, { status: 413, headers });
+    }
     if (!env.OPENAI_API_KEY) {
       return Response.json({ error: "الخادم غير مربوط بمفتاح الذكاء الاصطناعي بعد." }, { status: 503, headers });
     }
@@ -46,7 +53,9 @@ export default {
       const body = await request.json();
       const message = String(body.message || "").trim();
       const history = Array.isArray(body.history) ? body.history.slice(-12) : [];
-      const memory = Array.isArray(body.memory) ? body.memory.filter(x => typeof x === "string").slice(-30) : [];
+      const memory = Array.isArray(body.memory)
+        ? body.memory.filter(x => typeof x === "string").slice(-30).map(x => x.slice(0, 500))
+        : [];
       if (!message || message.length > 4000) {
         return Response.json({ error: "الرسالة فارغة أو طويلة بزاف." }, { status: 400, headers });
       }
@@ -67,7 +76,8 @@ export default {
           instructions: SYSTEM_PROMPT + (memory.length ? "\n\nمعلومات محفوظة بإذن المستخدم، استعملها عند صلتها بالسؤال ولا تخترع غيرها:\n- " + memory.join("\n- ") : ""),
           input,
           max_output_tokens: 700
-        })
+        }),
+        signal: AbortSignal.timeout(30000)
       });
 
       const data = await upstream.json();

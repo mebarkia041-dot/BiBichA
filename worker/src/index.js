@@ -34,6 +34,7 @@ export default {
       const body = await request.json();
       const message = String(body.message || "").trim();
       const history = Array.isArray(body.history) ? body.history.slice(-12) : [];
+      const memory = Array.isArray(body.memory) ? body.memory.filter(x => typeof x === "string").slice(-30) : [];
       if (!message || message.length > 4000) {
         return Response.json({ error: "الرسالة فارغة أو طويلة بزاف." }, { status: 400, headers });
       }
@@ -51,7 +52,7 @@ export default {
         },
         body: JSON.stringify({
           model: env.OPENAI_MODEL || "gpt-4.1-mini",
-          instructions: SYSTEM_PROMPT,
+          instructions: SYSTEM_PROMPT + (memory.length ? "\n\nمعلومات محفوظة بإذن المستخدم، استعملها عند صلتها بالسؤال ولا تخترع غيرها:\n- " + memory.join("\n- ") : ""),
           input,
           max_output_tokens: 700
         })

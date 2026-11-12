@@ -34,7 +34,7 @@ button{border:0;border-radius:24px;padding:0 16px;background:#8b5cf6;color:#fff;
 const box=document.getElementById('messages'),form=document.getElementById('chat'),entry=document.getElementById('entry');
 let installPrompt=null;const installBtn=document.getElementById('install');window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installBtn.hidden=false;});installBtn.addEventListener('click',async()=>{if(!installPrompt){add('bot','إذا ما ظهرش خيار التثبيت، افتح قائمة المتصفح واختر «إضافة إلى الشاشة الرئيسية».');return;}installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;installBtn.hidden=true;});window.addEventListener('appinstalled',()=>{installBtn.hidden=true;add('bot','مرحبا بيك! بيبيشا تثبتت في هاتفك ❤️');});
 let history=[];
-try{history=JSON.parse(localStorage.getItem('bibicha-chat')||'[]');if(!Array.isArray(history))history=[];}catch(e){history=[];}
+try{const saved=JSON.parse(localStorage.getItem('bibicha-chat')||'[]');history=Array.isArray(saved)?saved.filter(x=>x&&['user','bot'].includes(x.role)&&typeof x.text==='string').slice(-100):[];}catch(e){history=[];}
 let memory={facts:[]};
 try{memory=JSON.parse(localStorage.getItem('bibicha-memory')||'{"facts":[]}');if(!memory||!Array.isArray(memory.facts))memory={facts:[]};}catch(e){memory={facts:[]};}
 let autoVoice=localStorage.getItem('bibicha-auto-voice')==='1';
@@ -109,7 +109,7 @@ restoreFile.addEventListener('change',async()=>{
  try{
   if(file.size>2*1024*1024)throw new Error('الملف كبير بزاف.');
   const data=JSON.parse(await file.text());
-  if(data.app!=='BiBichA'||!Array.isArray(data.history)||!data.memory||!Array.isArray(data.memory.facts))throw new Error('هذا الملف ماشي نسخة احتياطية صالحة لبيبيشا.');
+  if(!data||data.app!=='BiBichA'||!Array.isArray(data.history)||!data.memory||!Array.isArray(data.memory.facts))throw new Error('هذا الملف ماشي نسخة احتياطية صالحة لبيبيشا.');
   history=data.history.filter(x=>x&&['user','bot'].includes(x.role)&&typeof x.text==='string').slice(-100);
   memory={facts:data.memory.facts.filter(x=>typeof x==='string').slice(-30)};
   localStorage.setItem('bibicha-chat',JSON.stringify(history));

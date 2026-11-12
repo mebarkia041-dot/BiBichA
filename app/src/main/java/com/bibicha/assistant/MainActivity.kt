@@ -42,6 +42,10 @@ class MainActivity : Activity() {
                 startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
             }
         }
+        val callerId = Button(this).apply {
+            text = "تفعيل إعلان المكالمات الواردة"
+            setOnClickListener { requestCallScreeningRole() }
+        }
 
         val configTitle = TextView(this).apply {
             text = "ربط الذكاء الاصطناعي"
@@ -91,6 +95,7 @@ class MainActivity : Activity() {
             addView(status)
             addView(activate)
             addView(notifications)
+            addView(callerId)
             addView(configTitle)
             addView(configHint)
             addView(workerUrl)
@@ -99,6 +104,24 @@ class MainActivity : Activity() {
             addView(clearHistory)
         }
         setContentView(ScrollView(this).apply { addView(content) })
+    }
+
+    private fun requestCallScreeningRole() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            Toast.makeText(this, "ميزة إعلان المتصل تحتاج Android 10 أو أحدث.", Toast.LENGTH_LONG).show()
+            return
+        }
+        val roles = getSystemService(RoleManager::class.java)
+        if (roles == null || !roles.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
+            Toast.makeText(this, "هذا الهاتف لا يتيح دور فحص المكالمات.", Toast.LENGTH_LONG).show()
+            return
+        }
+        if (roles.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
+            Toast.makeText(this, "بيبيشا مفعّلة بالفعل لإعلان المكالمات.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        @Suppress("DEPRECATION")
+        startActivityForResult(roles.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING), REQUEST_CALL_SCREENING)
     }
 
     private fun requestAssistantRole() {
@@ -126,7 +149,11 @@ class MainActivity : Activity() {
             val message = if (resultCode == RESULT_OK) "تم قبول تعيين بيبيشا كمساعد." else "لم يتم تغيير المساعد."
             Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         }
+        if (requestCode == REQUEST_CALL_SCREENING) {
+            val message = if (resultCode == RESULT_OK) "تم تفعيل إعلان المكالمات الواردة." else "لم يتم تفعيل ميزة إعلان المكالمات."
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        }
     }
 
-    companion object { private const val REQUEST_ASSISTANT = 41 }
+    companion object { private const val REQUEST_ASSISTANT = 41; private const val REQUEST_CALL_SCREENING = 43 }
 }

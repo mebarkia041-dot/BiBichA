@@ -27,7 +27,7 @@ test("health endpoint works when opened directly and never reveals the secret", 
   const response = await worker.fetch(request("/health"), env());
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), {
-    service: "BiBichA AI",
+    service: "Emilia AI",
     configured: true
   });
 });

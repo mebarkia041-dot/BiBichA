@@ -3,6 +3,7 @@ package com.bibicha.assistant
 import android.app.Activity
 import android.app.role.RoleManager
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.LinearLayout
@@ -18,7 +19,7 @@ class MainActivity : Activity() {
             setPadding(24, 48, 24, 24)
         }
         val status = TextView(this).apply {
-            text = "هذه أول نسخة Android تجريبية. تفعيل دور المساعد يتم بموافقتك من إعدادات Android."
+            text = "هذه نسخة Android أولية. يمكنك طلب تعيين بيبيشا كمساعد الهاتف إذا كان جهازك يدعم ذلك."
             textSize = 16f
             setPadding(24, 16, 24, 24)
         }
@@ -36,6 +37,10 @@ class MainActivity : Activity() {
     }
 
     private fun requestAssistantRole() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            Toast.makeText(this, "تعيين المساعد الافتراضي بهذه الطريقة يحتاج Android 10 أو أحدث.", Toast.LENGTH_LONG).show()
+            return
+        }
         val roles = getSystemService(RoleManager::class.java)
         if (roles == null || !roles.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) {
             Toast.makeText(this, "هذا الجهاز لا يتيح دور المساعد عبر هذه الواجهة.", Toast.LENGTH_LONG).show()

@@ -27,7 +27,7 @@ button{border:0;border-radius:24px;padding:0 16px;background:#8b5cf6;color:#fff;
 <section id="messages" aria-live="polite"></section>
 <form id="chat"><input id="entry" placeholder="اكتب رسالتك هنا..." autocomplete="off" required><button type="submit">إرسال</button></form>
 <div id="connection" role="status">حالة الاتصال: جاري الفحص...</div>
-<div class="note">تحفظ المحادثة على هذا الهاتف. دون إعداد الخادم الآمن، تعمل إميليا بالردود التجريبية؛ بعد ربط الخادم تتحدث معك بالذكاء الاصطناعي عبر الإنترنت.</div>
+<div class="note">تحفظ المحادثة على هذا الهاتف. تعمل إميليا مجاناً بالوظائف والردود المحلية دون بطاقة أو مفتاح API. يمكن إضافة خدمة ذكاء اصطناعي خارجية اختيارياً، وقد تكون لها حدود أو تكاليف.</div>
 </main>
 <script src="./api-config.js"></script>
 <script>
@@ -77,7 +77,20 @@ function rememberFromMessage(value){
  return '';
 }
 function add(role,text,save=true){const m=document.createElement('div');m.className='msg '+role;m.textContent=text;box.appendChild(m);box.scrollTop=box.scrollHeight;if(save){history.push({role,text});try{localStorage.setItem('bibicha-chat',JSON.stringify(history.slice(-100)));}catch(e){}}if(role==='bot'&&autoVoice)say(text);}
-function reply(q){const s=q.toLowerCase();if(/سلام|salam|مرحبا|bonjour/.test(s))return 'وعليكم السلام ❤️ أنا إميليا، راني هنا معاك.';if(/اسمك|شكون|من انت/.test(s))return 'أنا إميليا، واسمي إميليا فقط 💜';if(/شكرا|merci/.test(s))return 'بلا مزية يا الغالي ❤️';if(/كيف حالك|واش راكي/.test(s))return 'لاباس الحمد لله، وفرحانة نهدر معاك 😊';if(/نحبك|احبك/.test(s))return 'كلامك حنون ❤️ أنا هنا باش نعاونك ونسمعلك.';return 'وصلتني رسالتك ❤️ حالياً هذي نسخة أولية بردود بسيطة دون إنترنت. الذكاء الاصطناعي الحقيقي مازال يحتاج ربط آمن بخدمة API.';}
+function reply(q){
+ const s=q.toLowerCase().trim();
+ if(/سلام|salam|مرحبا|bonjour/.test(s))return 'وعليكم السلام ❤️ أنا إميليا، راني هنا معاك. واش نقدر نعاونك اليوم؟';
+ if(/اسمك|شكون|من انت/.test(s))return 'أنا إميليا، مساعدتك الشخصية 💜 نخدم بالوظائف المحلية المجانية، وبعض الردود الذكية تحتاج اتصالاً بخدمة خارجية.';
+ if(/شكرا|merci/.test(s))return 'بلا مزية ❤️ ديما هنا باش نعاونك.';
+ if(/كيف حالك|واش راكي/.test(s))return 'لاباس، شكراً على سؤالك 😊 قوليلي واش حابة نديرو اليوم؟';
+ if(/نحبك|احبك/.test(s))return 'كلامك حنون ❤️ أنا هنا نسمعلك ونعاونك، ومع هذا العلاقات والدعم الحقيقي من الناس مهمين.';
+ if(/الوقت|الساعة|التاريخ|نهار/.test(s))return 'تقدري تشوفي الوقت والتاريخ من هاتفك. ما عنديش وصول مضمون لساعة الجهاز في هذي النسخة.';
+ if(/نصيحة|متقلق|قلقان|حزين|تعبان/.test(s))return 'نسمعلك ❤️ خذ نفس عميق، وقسّم اللي مقلقك لخطوة صغيرة تقدر تديرها الآن. إذا تحب احكيلي واش صرا ونرتبوها مع بعض.';
+ if(/برنامج|خطة|نظم|نظملي|مهام|قائمة/.test(s))return 'نقدرو ننظموها هكذا: 1) حدّد الهدف. 2) اختار أهم 3 مهام. 3) ابدأ بأصغر خطوة. 4) راجع واش كملت في آخر النهار. اكتبلي الهدف ونحضّرلك خطة.';
+ if(/طقس|مطر|رياح/.test(s))return 'معلومات الطقس الحية تحتاج إنترنت ومصدر طقس. نقدر نعاونك تفهم التوقعات إذا كتبتلي المعلومات اللي تظهرلك.';
+ if(/افتح|شغل|اتصل|ابعث|ارسل/.test(s))return 'نقدر نرشدك للخطوات، لكن تنفيذ فتح التطبيقات أو الاتصال أو إرسال الرسائل يحتاج صلاحيات وأداة هاتف مناسبة، وما ندّعيش بلي نفذتها.';
+ return 'وصلتني رسالتك ❤️ نقدر نعاونك في التنظيم، كتابة الرسائل، التخطيط والنصائح البسيطة. هذي النسخة المجانية المحلية ما تستعملش نموذج ذكاء اصطناعي سحابي، لذلك قدراتها محدودة وما نحبش نعطيك معلومة ونقولك مؤكدة وهي غير متحققة. وضّحلي واش تحتاج ونحاول نعاونك.';
+}
 if(history.length){history.forEach(x=>add(x.role,x.text,false));}else add('bot','سلام ❤️ أنا إميليا. اكتبلّي واش حاب، ونبدأو مع بعض.');
 form.addEventListener('submit',async e=>{
  e.preventDefault();
@@ -90,14 +103,14 @@ form.addEventListener('submit',async e=>{
  try{
    const endpoint=chatEndpoint();
    if(!endpoint){add('bot',reply(v));return;}
-   if(!apiToken)throw new Error('اضغط «ربط آمن» وأدخل رمز الربط الذي ضبطته في Cloudflare أولاً.');
+   if(!apiToken){add('bot',reply(v));return;}
    const context=previous.map(x=>({role:x.role==='user'?'user':'assistant',content:x.text}));
    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiToken},body:JSON.stringify({message:v,history:context,memory:memory.facts}),signal:AbortSignal.timeout(35000)});
    const data=await response.json().catch(()=>({}));
 
    if(!response.ok)throw new Error(data.error||'تعذر الاتصال بالخادم.');
    add('bot',data.reply||'ما وصلنيش رد. عاود المحاولة.');
- }catch(err){add('bot',err.name==='TimeoutError'?'الخادم تأخر في الرد. تحقق من الاتصال وحاول مرة أخرى.':(err.message||'ما قدرتش نتصل بالخادم حالياً. تحقق من الإنترنت وإعدادات الربط.'));}
+ }catch(err){add('bot',reply(v)+'\n\nملاحظة: تعذر الاتصال بالخدمة الخارجية، استعملت الرد المحلي المجاني.');}
  finally{send.disabled=false;send.textContent='إرسال';entry.focus();}
 });
 document.getElementById('clear').addEventListener('click',()=>{history=[];localStorage.removeItem('bibicha-chat');box.innerHTML='';add('bot','رجعنا صفحة جديدة ❤️ ذاكرتي المحفوظة تبقى. أنا إميليا، واش نحكيو اليوم؟');});

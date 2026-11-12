@@ -28,7 +28,10 @@ export default {
     const validWebOrigin = Boolean(allowedOrigin && origin === allowedOrigin);
     const authorization = request.headers.get("Authorization") || "";
     const validNativeToken = Boolean(env.MOBILE_APP_TOKEN && authorization === `Bearer ${env.MOBILE_APP_TOKEN}`);
-    if (!validWebOrigin && !validNativeToken) {
+    if (origin && !validWebOrigin) {
+      return new Response("Origin not allowed", { status: 403, headers: { "Cache-Control": "no-store" } });
+    }
+    if (!origin && !validNativeToken) {
       return new Response("Unauthorized", { status: 401, headers: { "Cache-Control": "no-store" } });
     }
 

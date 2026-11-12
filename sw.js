@@ -1,4 +1,4 @@
-const CACHE = "bibicha-shell-v4";
+const CACHE = "bibicha-shell-v5";
 const FILES = ["./", "./index.html", "./manifest.json", "./api-config.js"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(FILES)));

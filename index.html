@@ -41,13 +41,16 @@ let autoVoice=localStorage.getItem('bibicha-auto-voice')==='1';
 const autoVoiceBtn=document.getElementById('autoVoice');
 function refreshVoiceButton(){autoVoiceBtn.textContent=autoVoice?'🔊 الصوت التلقائي: يعمل':'🔈 الصوت التلقائي: متوقف';}
 refreshVoiceButton();
+function apiBase(){
+ return (window.BIBICHA_API_URL||'').trim().replace(/\\/+$/,'').replace(/\\/chat$/i,'');
+}
+function chatEndpoint(){const base=apiBase();return base?base+'/chat':'';}
 async function checkBackend(){
- const endpoint=window.BIBICHA_API_URL||'';
+ const base=apiBase();
  const status=document.getElementById('connection');
- if(!endpoint){status.textContent='حالة الاتصال: الذكاء الاصطناعي غير مربوط بعد';return;}
+ if(!base){status.textContent='حالة الاتصال: الذكاء الاصطناعي غير مربوط بعد';return;}
  try{
-  const healthUrl=endpoint.replace(/\/chat\/?$/,'/health');
-  const res=await fetch(healthUrl,{method:'GET',cache:'no-store'});
+  const res=await fetch(base+'/health',{method:'GET',cache:'no-store'});
   const data=await res.json();
   status.textContent=res.ok&&data.configured?'حالة الاتصال: الخادم متاح والمفتاح موجود؛ جرّب إرسال رسالة للتأكد من عمل API ❤️':'حالة الاتصال: الخادم موجود لكن مفتاح API غير مضبوط';
  }catch(e){status.textContent='حالة الاتصال: تعذر الوصول إلى الخادم؛ تحقق من الرابط والإنترنت';}
@@ -77,7 +80,7 @@ form.addEventListener('submit',async e=>{
  if(memoryNotice){add('bot',memoryNotice);return;}
  const send=form.querySelector('button[type="submit"]');send.disabled=true;send.textContent='...';
  try{
-   const endpoint=window.BIBICHA_API_URL||'';
+   const endpoint=chatEndpoint();
    if(!endpoint){add('bot',reply(v));return;}
    const context=previous.map(x=>({role:x.role==='user'?'user':'assistant',content:x.text}));
    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:v,history:context,memory:memory.facts}),signal:AbortSignal.timeout(35000)});

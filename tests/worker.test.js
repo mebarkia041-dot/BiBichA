@@ -166,3 +166,24 @@ test("chat sends validated conversation and memory to OpenAI and returns the ans
     globalThis.fetch = originalFetch;
   }
 });
+
+
+test("chat preflight allows only the configured web app origin", async () => {
+  const response = await worker.fetch(request("/chat", {
+    method: "OPTIONS",
+    origin: ORIGIN
+  }), env());
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), ORIGIN);
+  assert.match(response.headers.get("Access-Control-Allow-Methods"), /POST/);
+});
+
+test("unknown worker routes return not found", async () => {
+  const response = await worker.fetch(request("/unknown", {
+    method: "POST",
+    origin: ORIGIN,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "اختبار" })
+  }), env());
+  assert.equal(response.status, 404);
+});

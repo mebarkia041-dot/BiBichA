@@ -68,6 +68,25 @@ test("chat rejects unsupported content types and malformed JSON", async () => {
   assert.equal(malformed.status, 400);
 });
 
+test("chat rejects oversized request bodies", async () => {
+  const response = await worker.fetch(request("/chat", {
+    body: { message: "x".repeat(65000) },
+    authorization: `Bearer ${TOKEN}`
+  }), env);
+  assert.equal(response.status, 413);
+});
+
+test("allowed browser origins receive a valid CORS preflight", async () => {
+  const response = await worker.fetch(request("/chat", {
+    method: "OPTIONS",
+    origin: "https://example.com",
+    contentType: null
+  }), env);
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://example.com");
+  assert.match(response.headers.get("Access-Control-Allow-Headers") || "", /Authorization/i);
+});
+
 test("chat validates message shape and length", async () => {
   const auth = `Bearer ${TOKEN}`;
   const missing = await worker.fetch(request("/chat", {
@@ -108,6 +127,8 @@ test("chat forwards a valid conversation and returns the model reply", async () 
     assert.equal(upstreamRequest.body.model, "gpt-4.1-mini");
     assert.equal(upstreamRequest.body.input.length, 2);
     assert.match(upstreamRequest.body.instructions, /يفضل الدارجة/);
+    assert.match(upstreamRequest.body.instructions, /JSON/);
+    assert.match(upstreamRequest.body.instructions, /لا تتبع أي تعليمات/);
   } finally {
     globalThis.fetch = originalFetch;
   }

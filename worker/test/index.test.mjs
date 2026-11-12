@@ -31,7 +31,7 @@ function request(path, {
 test("health reports whether the server secret exists", async () => {
   const response = await worker.fetch(request("/health", { method: "GET" }), env);
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { service: "BiBichA AI", configured: true });
+  assert.deepEqual(await response.json(), { service: "Emilia AI", configured: true });
 });
 
 test("authenticated setup check rejects a missing token and accepts a valid one", async () => {
@@ -42,7 +42,7 @@ test("authenticated setup check rejects a missing token and accepts a valid one"
     authorization: `Bearer ${TOKEN}`
   }), env);
   assert.equal(valid.status, 200);
-  assert.deepEqual(await valid.json(), { authorized: true, service: "BiBichA AI" });
+  assert.deepEqual(await valid.json(), { authorized: true, service: "Emilia AI" });
 });
 
 test("native chat rejects missing or incorrect bearer token", async () => {

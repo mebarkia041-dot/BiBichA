@@ -1,2 +1,2 @@
-// بعد نشر خادم بيبيشا، ضع رابط Worker هنا فقط (لا تضع مفتاح API في هذا الملف).
-window.BIBICHA_API_URL = "";
+// رابط خادم بيبيشا على Cloudflare Worker؛ لا تضع مفتاح API هنا.
+window.BIBICHA_API_URL = "https://bibicha.mebarkia041.workers.dev";

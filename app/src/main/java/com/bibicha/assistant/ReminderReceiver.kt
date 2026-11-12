@@ -1,44 +1,43 @@
 package com.bibicha.assistant
 
+import android.app.BroadcastReceiver
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val title = intent.getStringExtra(EXTRA_TITLE)?.takeIf { it.isNotBlank() } ?: "عندك تذكير"
-        val notificationManager = context.getSystemService(NotificationManager::class.java)
+        val manager = context.getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notificationManager.createNotificationChannel(
+            manager.createNotificationChannel(
                 NotificationChannel(CHANNEL_ID, "تذكيرات إميليا", NotificationManager.IMPORTANCE_HIGH)
             )
         }
+        val id = intent.getIntExtra(EXTRA_ID, 1)
         val openApp = PendingIntent.getActivity(
-            context,
-            intent.getIntExtra(EXTRA_ID, 0),
-            Intent(context, MainActivity::class.java),
+            context, id, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(context, CHANNEL_ID)
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(context)
+        }
+        val notification = builder
             .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
             .setContentTitle("💜 إميليا تذكّرك")
             .setContentText(title)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(title))
+            .setStyle(Notification.BigTextStyle().bigText(title))
             .setContentIntent(openApp)
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
-        try {
-            NotificationManagerCompat.from(context).notify(intent.getIntExtra(EXTRA_ID, 1), notification)
-        } catch (_: SecurityException) {
-            // Android 13+ requires notification permission; the scheduled alarm remains harmless.
-        }
+        manager.notify(id, notification)
     }
 
     companion object {

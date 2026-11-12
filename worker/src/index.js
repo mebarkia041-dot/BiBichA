@@ -13,6 +13,19 @@ export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
     const allowedOrigin = env.ALLOWED_ORIGIN || "";
+    const url = new URL(request.url);
+
+    // Safe public health check; direct browser navigation has no Origin header.
+    if (url.pathname === "/health" && request.method === "GET") {
+      const healthHeaders = origin === allowedOrigin && allowedOrigin
+        ? corsHeaders(origin, allowedOrigin)
+        : {};
+      return Response.json(
+        { service: "BiBichA AI", configured: Boolean(env.OPENAI_API_KEY) },
+        { headers: healthHeaders }
+      );
+    }
+
     if (!allowedOrigin || origin !== allowedOrigin) {
       return new Response("Origin not allowed", { status: 403 });
     }
@@ -22,10 +35,6 @@ export default {
       return new Response(null, { status: 204, headers });
     }
 
-    const url = new URL(request.url);
-    if (url.pathname === "/health" && request.method === "GET") {
-      return Response.json({ service: "BiBichA AI", configured: Boolean(env.OPENAI_API_KEY) }, { headers });
-    }
     if (url.pathname !== "/chat" || request.method !== "POST") {
       return new Response("Not found", { status: 404, headers });
     }

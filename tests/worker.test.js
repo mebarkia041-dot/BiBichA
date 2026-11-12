@@ -97,6 +97,39 @@ test("chat returns a helpful error when the API secret is missing", async () => 
   assert.equal(response.status, 503);
 });
 
+test("chat handles unexpected upstream output shape without crashing", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ output: { unexpected: true } });
+  try {
+    const response = await worker.fetch(request("/chat", {
+      method: "POST",
+      origin: ORIGIN,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "اختبار" })
+    }), env());
+    assert.equal(response.status, 502);
+    assert.match((await response.json()).error, /ما وصلنيش رد/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("chat returns a gateway error when the upstream response is not JSON", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("upstream unavailable", { status: 502 });
+  try {
+    const response = await worker.fetch(request("/chat", {
+      method: "POST",
+      origin: ORIGIN,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "اختبار" })
+    }), env());
+    assert.equal(response.status, 502);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("chat sends validated conversation and memory to OpenAI and returns the answer", async () => {
   const originalFetch = globalThis.fetch;
   let sent;

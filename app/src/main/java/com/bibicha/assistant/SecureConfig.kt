@@ -123,6 +123,46 @@ object SecureConfig {
         return try { decrypt(encoded) } catch (_: Exception) { "" }
     }
 
+
+    // Portable, user-controlled backup. Secrets are re-encrypted with this installation's Android Keystore key on import.
+    fun exportBackup(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val result = JSONObject()
+            .put("format", "emilia-local-backup")
+            .put("version", 1)
+            .put("workerUrl", workerUrl(context))
+            .put("token", token(context))
+            .put("history", history(context))
+            .put("memories", memories(context))
+            .put("emergencyNumber", emergencyNumber(context))
+            .put("notificationReadingEnabled", notificationReadingEnabled(context))
+        return result.toString(2)
+    }
+
+    fun importBackup(context: Context, jsonText: String) {
+        val data = JSONObject(jsonText)
+        require(data.optString("format") == "emilia-local-backup") { "هذا الملف ليس نسخة احتياطية لإميليا." }
+        require(data.optInt("version") == 1) { "إصدار النسخة الاحتياطية غير مدعوم." }
+        val url = data.optString("workerUrl", DEFAULT_WORKER_URL)
+        val savedToken = data.optString("token", "")
+        if (savedToken.isNotBlank()) {
+            require(isValidWorkerUrl(url) && savedToken.length >= 32) { "إعدادات الربط داخل النسخة غير صالحة." }
+        }
+        val historyData = data.optJSONArray("history") ?: JSONArray()
+        val memoryData = data.optJSONArray("memories") ?: JSONArray()
+        val emergency = data.optString("emergencyNumber", "")
+        if (emergency.isNotBlank()) require(emergency.matches(Regex("[+0-9٠-٩]{8,16}"))) { "رقم الطوارئ في النسخة غير صالح." }
+
+        val editor = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(URL_KEY, if (isValidWorkerUrl(url)) url.trim().trimEnd('/') else DEFAULT_WORKER_URL)
+            .putString(HISTORY_KEY, encrypt(historyData.toString()))
+            .putString(MEMORY_KEY, encrypt(memoryData.toString()))
+            .putBoolean(NOTIFICATION_READING_KEY, data.optBoolean("notificationReadingEnabled", false))
+        if (savedToken.isNotBlank()) editor.putString(TOKEN_KEY, encrypt(savedToken))
+        if (emergency.isNotBlank()) editor.putString(EMERGENCY_NUMBER_KEY, encrypt(emergency))
+        editor.apply()
+    }
+
     private fun getOrCreateKey(): SecretKey {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         (store.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }

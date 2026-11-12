@@ -97,17 +97,23 @@ export default {
       if (!upstream.ok) {
         return Response.json({ error: "تعذر الاتصال بخدمة الذكاء الاصطناعي حالياً." }, { status: 502, headers });
       }
-      const answer = data.output_text || (data.output || [])
-        .flatMap(item => item.content || [])
-        .filter(item => item.type === "output_text")
-        .map(item => item.text)
-        .join("\n");
+      const answer = typeof data.output_text === "string" && data.output_text.trim()
+        ? data.output_text.trim()
+        : (Array.isArray(data.output) ? data.output : [])
+          .flatMap(item => Array.isArray(item?.content) ? item.content : [])
+          .filter(item => item?.type === "output_text" && typeof item.text === "string")
+          .map(item => item.text)
+          .join("\n").trim();
       if (!answer) {
         return Response.json({ error: "ما وصلنيش رد. عاود المحاولة." }, { status: 502, headers });
       }
       return Response.json({ reply: answer }, { headers });
     } catch (error) {
-      return Response.json({ error: "صار خطأ في الخادم. عاود بعد لحظة." }, { status: 500, headers });
+      const timedOut = error?.name === "TimeoutError" || error?.name === "AbortError";
+      return Response.json(
+        { error: timedOut ? "خدمة الذكاء الاصطناعي تأخرت. عاود المحاولة." : "صار خطأ في الخادم. عاود بعد لحظة." },
+        { status: timedOut ? 504 : 502, headers }
+      );
     }
   }
 };

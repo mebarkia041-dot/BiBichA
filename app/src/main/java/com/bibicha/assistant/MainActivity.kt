@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
+import android.speech.RecognizerIntent
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -23,6 +24,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class MainActivity : Activity() {
+    private var chatLogView: TextView? = null
+    private var chatStatusView: TextView? = null
+    private var chatSendButton: Button? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
@@ -144,6 +149,7 @@ class MainActivity : Activity() {
             text = "مسح ذاكرة المحادثة المحلية"
             setOnClickListener {
                 SecureConfig.clearHistory(this@MainActivity)
+                chatLog.text = "تم مسح المحادثة. نبدأو من جديد 💜"
                 Toast.makeText(this@MainActivity, "تم مسح سجل المحادثة المحفوظ على الهاتف.", Toast.LENGTH_LONG).show()
             }
         }
@@ -209,6 +215,13 @@ class MainActivity : Activity() {
                 }
             }
         }
+        val voiceChat = Button(this).apply {
+            text = "🎙️ تكلمي مع بيبيشا"
+            setOnClickListener { startVoiceInput() }
+        }
+        chatLogView = chatLog
+        chatStatusView = chatStatus
+        chatSendButton = sendChat
         fun refreshChatLog() {
             val history = SecureConfig.history(this@MainActivity)
             val lines = ArrayList<String>()
@@ -230,6 +243,7 @@ class MainActivity : Activity() {
             addView(chatLog)
             addView(chatInput)
             addView(sendChat)
+            addView(voiceChat)
             addView(status)
             addView(activate)
             addView(notifications)
@@ -252,6 +266,29 @@ class MainActivity : Activity() {
         }
         setContentView(ScrollView(this).apply { addView(content) })
         if (intent.getBooleanExtra(EXTRA_EMERGENCY_SHARE, false)) requestEmergencyLocation()
+    }
+
+    private fun startVoiceInput() {
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), REQUEST_MICROPHONE)
+            chatStatusView?.text = "اسمح باستعمال الميكروفون ثم عاود الضغط."
+            return
+        }
+        if (!android.speech.SpeechRecognizer.isRecognitionAvailable(this)) {
+            chatStatusView?.text = "التعرف على الصوت غير متاح في هذا الهاتف."
+            return
+        }
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ar-DZ")
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "تكلم مع بيبيشا")
+        }
+        try {
+            startActivityForResult(intent, REQUEST_VOICE_CHAT)
+        } catch (_: Exception) {
+            chatStatusView?.text = "ما قدرناش نفتحو التعرف على الصوت."
+        }
     }
 
     private fun sendChatMessage(message: String, chatLog: TextView, chatStatus: TextView, sendButton: Button) {
@@ -446,6 +483,22 @@ class MainActivity : Activity() {
     @Deprecated("Android role result callback")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_VOICE_CHAT) {
+            if (resultCode == RESULT_OK) {
+                val spoken = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim().orEmpty()
+                if (spoken.isNotBlank()) {
+                    chatStatusView?.text = "سمعتك: $spoken"
+                    val log = chatLogView
+                    val status = chatStatusView
+                    val button = chatSendButton
+                    if (log != null && status != null && button != null) sendChatMessage(spoken, log, status, button)
+                } else {
+                    chatStatusView?.text = "ما وصلنيش كلام واضح. عاود."
+                }
+            } else {
+                chatStatusView?.text = "توقّف الاستماع. تقدر تعاود وقت تحب."
+            }
+        }
         if (requestCode == REQUEST_ASSISTANT) {
             val message = if (resultCode == RESULT_OK) "تم قبول تعيين بيبيشا كمساعد." else "لم يتم تغيير المساعد."
             Toast.makeText(this, message, Toast.LENGTH_LONG).show()
@@ -456,5 +509,5 @@ class MainActivity : Activity() {
         }
     }
 
-    companion object { private const val REQUEST_ASSISTANT = 41; private const val REQUEST_CALL_SCREENING = 43; private const val REQUEST_LOCATION = 44; const val EXTRA_EMERGENCY_SHARE = "bibicha_emergency_share" }
+    companion object { private const val REQUEST_ASSISTANT = 41; private const val REQUEST_CALL_SCREENING = 43; private const val REQUEST_LOCATION = 44; private const val REQUEST_VOICE_CHAT = 45; private const val REQUEST_MICROPHONE = 46; const val EXTRA_EMERGENCY_SHARE = "bibicha_emergency_share" }
 }

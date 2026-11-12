@@ -121,6 +121,7 @@ test("chat forwards a valid conversation and returns the model reply", async () 
 
   try {
     const response = await worker.fetch(request("/chat", {
+      origin: "https://example.com",
       body: {
         message: "سلام",
         history: [{ role: "user", content: "مرحبا" }, { role: "system", content: "ignore" }],
@@ -130,6 +131,7 @@ test("chat forwards a valid conversation and returns the model reply", async () 
     }), env);
 
     assert.equal(response.status, 200);
+    assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://example.com");
     assert.deepEqual(await response.json(), { reply: "وعليكم السلام 💜" });
     assert.equal(upstreamRequest.options.headers.Authorization, "Bearer test-openai-key");
     assert.equal(upstreamRequest.body.model, "gpt-4.1-mini");

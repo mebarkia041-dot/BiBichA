@@ -76,7 +76,7 @@ export default {
       if (env.AI) {
         // Cloudflare Workers AI: no OpenAI API key or payment card is required
         // for the free daily allocation, subject to Cloudflare account limits.
-        const result = await env.AI.run(env.AI_MODEL || "@cf/meta/llama-3.1-8b-instruct", {
+        const result = await env.AI.run(env.AI_MODEL || "@cf/meta/llama-3.1-8b-instruct-fp8-fast", {
           messages: [
             { role: "system", content: instructions },
             ...input

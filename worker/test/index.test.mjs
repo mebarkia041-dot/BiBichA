@@ -1,0 +1,131 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import worker from "../src/index.js";
+
+const TOKEN = "test-mobile-token-that-is-at-least-32-chars";
+const env = {
+  OPENAI_API_KEY: "test-openai-key",
+  MOBILE_APP_TOKEN: TOKEN,
+  OPENAI_MODEL: "gpt-4.1-mini",
+  ALLOWED_ORIGIN: "https://example.com"
+};
+
+function request(path, {
+  method = "POST",
+  body,
+  origin,
+  authorization,
+  contentType = "application/json"
+} = {}) {
+  const headers = {};
+  if (origin) headers.Origin = origin;
+  if (authorization) headers.Authorization = authorization;
+  if (contentType) headers["Content-Type"] = contentType;
+  return new Request(`https://bibicha.example${path}`, {
+    method,
+    headers,
+    body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body)
+  });
+}
+
+test("health reports whether the server secret exists", async () => {
+  const response = await worker.fetch(request("/health", { method: "GET" }), env);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { service: "BiBichA AI", configured: true });
+});
+
+test("native chat rejects missing or incorrect bearer token", async () => {
+  const missing = await worker.fetch(request("/chat", { body: { message: "سلام" } }), env);
+  assert.equal(missing.status, 401);
+  const wrong = await worker.fetch(request("/chat", {
+    body: { message: "سلام" },
+    authorization: "Bearer wrong-token"
+  }), env);
+  assert.equal(wrong.status, 401);
+});
+
+test("browser chat rejects an origin outside the allowlist", async () => {
+  const response = await worker.fetch(request("/chat", {
+    origin: "https://attacker.example",
+    body: { message: "سلام" }
+  }), env);
+  assert.equal(response.status, 403);
+});
+
+test("chat rejects unsupported content types and malformed JSON", async () => {
+  const auth = `Bearer ${TOKEN}`;
+  const unsupported = await worker.fetch(request("/chat", {
+    body: "message",
+    authorization: auth,
+    contentType: "text/plain"
+  }), env);
+  assert.equal(unsupported.status, 415);
+
+  const malformed = await worker.fetch(request("/chat", {
+    body: "{not-json",
+    authorization: auth
+  }), env);
+  assert.equal(malformed.status, 400);
+});
+
+test("chat validates message shape and length", async () => {
+  const auth = `Bearer ${TOKEN}`;
+  const missing = await worker.fetch(request("/chat", {
+    body: { history: [] },
+    authorization: auth
+  }), env);
+  assert.equal(missing.status, 400);
+
+  const tooLong = await worker.fetch(request("/chat", {
+    body: { message: "x".repeat(4001) },
+    authorization: auth
+  }), env);
+  assert.equal(tooLong.status, 400);
+});
+
+test("chat forwards a valid conversation and returns the model reply", async () => {
+  const originalFetch = globalThis.fetch;
+  let upstreamRequest;
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, "https://api.openai.com/v1/responses");
+    upstreamRequest = { url, options, body: JSON.parse(options.body) };
+    return Response.json({ output_text: "وعليكم السلام 💜" });
+  };
+
+  try {
+    const response = await worker.fetch(request("/chat", {
+      body: {
+        message: "سلام",
+        history: [{ role: "user", content: "مرحبا" }, { role: "system", content: "ignore" }],
+        memory: ["يفضل الدارجة"]
+      },
+      authorization: `Bearer ${TOKEN}`
+    }), env);
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { reply: "وعليكم السلام 💜" });
+    assert.equal(upstreamRequest.options.headers.Authorization, "Bearer test-openai-key");
+    assert.equal(upstreamRequest.body.model, "gpt-4.1-mini");
+    assert.equal(upstreamRequest.body.input.length, 2);
+    assert.match(upstreamRequest.body.instructions, /يفضل الدارجة/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("chat returns a safe error when the upstream provider fails", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ error: { message: "private upstream detail" } }, { status: 401 });
+  try {
+    const response = await worker.fetch(request("/chat", {
+      body: { message: "اختبار" },
+      authorization: `Bearer ${TOKEN}`
+    }), env);
+    assert.equal(response.status, 502);
+    const result = await response.json();
+    assert.equal(result.error, "تعذر الاتصال بخدمة الذكاء الاصطناعي حالياً.");
+    assert.equal(JSON.stringify(result).includes("private upstream detail"), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

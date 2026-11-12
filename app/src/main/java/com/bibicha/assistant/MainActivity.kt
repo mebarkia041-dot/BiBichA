@@ -481,6 +481,12 @@ class MainActivity : Activity() {
     }
 
     private fun findCurrentLocation() {
+        val fineGranted = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val coarseGranted = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!fineGranted && !coarseGranted) {
+            Toast.makeText(this, "إذن الموقع غير متاح. اسمح بالموقع ثم عاود.", Toast.LENGTH_LONG).show()
+            return
+        }
         val manager = getSystemService(LocationManager::class.java) ?: return
         val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
         val recent = try {

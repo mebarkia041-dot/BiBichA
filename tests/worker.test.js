@@ -54,6 +54,17 @@ test("chat rejects non-JSON requests", async () => {
   assert.equal(response.status, 415);
 });
 
+test("chat rejects malformed JSON with a client error", async () => {
+  const response = await worker.fetch(request("/chat", {
+    method: "POST",
+    origin: ORIGIN,
+    headers: { "Content-Type": "application/json" },
+    body: "{not-json"
+  }), env());
+  assert.equal(response.status, 400);
+  assert.match((await response.json()).error, /غير صالح/);
+});
+
 test("chat rejects oversized bodies even without Content-Length", async () => {
   const response = await worker.fetch(request("/chat", {
     method: "POST",

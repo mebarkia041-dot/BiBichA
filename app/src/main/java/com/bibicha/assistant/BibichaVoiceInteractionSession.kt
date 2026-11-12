@@ -1,6 +1,11 @@
 package com.bibicha.assistant
 
 import android.Manifest
+import android.os.Handler
+import android.os.Looper
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -18,6 +23,8 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
     private var speaker: TextToSpeech? = null
     private var statusView: TextView? = null
     private var speakerReady = false
+    private val mainHandler = Handler(Looper.getMainLooper())
+    @Volatile private var sessionActive = false
 
     override fun onCreateContentView(): View {
         statusView = TextView(context).apply {
@@ -31,6 +38,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
 
     override fun onShow(args: Bundle?, showFlags: Int) {
         super.onShow(args, showFlags)
+        sessionActive = true
         if (speaker == null) {
             speaker = TextToSpeech(context) { result ->
                 if (result == TextToSpeech.SUCCESS) {
@@ -129,7 +137,48 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
             say("نفتحلك الإعدادات.")
             return
         }
-        say("فهمت كلامك، بصح الأوامر المتاحة حالياً هي فتح التطبيقات. باقي المهام نزيدوها بالتدريج.")
+        askBiBichA(raw)
+    }
+
+    private fun askBiBichA(message: String) {
+        val worker = SecureConfig.workerUrl(context)
+        val token = try { SecureConfig.token(context) } catch (_: Exception) { "" }
+        if (worker.isBlank() || token.isBlank()) {
+            say("باش نهدر معاك بالذكاء الحقيقي، لازم تكمل إعداد رابط الخادم ورمز الربط في تطبيق بيبيشا.")
+            return
+        }
+        statusView?.text = "بيبيشا راهي تفكر..."
+        Thread {
+            var connection: HttpURLConnection? = null
+            try {
+                connection = (URL("$worker/chat").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    connectTimeout = 15000
+                    readTimeout = 30000
+                    doOutput = true
+                    setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                    setRequestProperty("Authorization", "Bearer $token")
+                }
+                val payload = JSONObject().put("message", message).put("history", org.json.JSONArray())
+                connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
+                val code = connection.responseCode
+                val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+                val response = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                val json = JSONObject(response.ifBlank { "{}" })
+                val answer = if (code in 200..299) {
+                    json.optString("reply", "ما وصلنيش رد واضح.")
+                } else {
+                    json.optString("error", "تعذر الاتصال بالخادم. تحقق من إعدادات الربط.")
+                }
+                mainHandler.post { if (sessionActive) say(answer) }
+            } catch (_: Exception) {
+                mainHandler.post {
+                    if (sessionActive) say("ما قدرتش نتصل بالذكاء الاصطناعي. تحقق من الإنترنت ورابط الخادم.")
+                }
+            } finally {
+                connection?.disconnect()
+            }
+        }.start()
     }
 
     private fun say(message: String) {
@@ -138,6 +187,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
     }
 
     override fun onHide() {
+        sessionActive = false
         recognizer?.cancel()
         recognizer?.destroy()
         recognizer = null

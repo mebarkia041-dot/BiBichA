@@ -2,29 +2,41 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#8b5cf6"><link rel="manifest" href="./manifest.json"><title>BiBichA</title>
+<meta name="theme-color" content="#8b5cf6"><link rel="manifest" href="./manifest.json">
+<title>BiBichA</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial;background:#f7f3ff;color:#241b35;min-height:100vh;display:flex;justify-content:center}
 .app{width:100%;max-width:520px;height:100dvh;background:#fff;display:flex;flex-direction:column;box-shadow:0 0 35px #32145b12}
-header{padding:20px;background:linear-gradient(135deg,#8b5cf6,#d946ef);color:white;text-align:center}
+header{padding:18px;background:linear-gradient(135deg,#8b5cf6,#d946ef);color:white;text-align:center}
 header h1{margin:0;font-size:27px}header p{margin:5px 0 0;font-size:13px;opacity:.9}
+.toolbar{display:flex;gap:8px;padding:9px 12px;border-bottom:1px solid #eee}
+.toolbar button{flex:1;background:#f1eaff;color:#6d28d9;padding:9px;border-radius:12px}
 #messages{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
-.msg{padding:12px 15px;border-radius:18px;max-width:85%;line-height:1.6;white-space:pre-wrap}
+.msg{padding:12px 15px;border-radius:18px;max-width:88%;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
 .bot{background:#f1eaff;align-self:flex-start;border-bottom-right-radius:5px}
 .user{background:#8b5cf6;color:white;align-self:flex-end;border-bottom-left-radius:5px}
 form{display:flex;gap:8px;padding:12px;border-top:1px solid #eee}
 input{flex:1;min-width:0;border:1px solid #ddd;border-radius:24px;padding:13px;font-size:16px;outline:none}
-button{border:0;border-radius:24px;padding:0 18px;background:#8b5cf6;color:#fff;font-size:15px}
+button{border:0;border-radius:24px;padding:0 16px;background:#8b5cf6;color:#fff;font-size:15px;cursor:pointer}
 .note{font-size:11px;color:#8a8195;text-align:center;padding:0 10px 10px}
 </style></head>
 <body><main class="app">
 <header><h1>💜 BiBichA</h1><p>بيبيشا • سارة • وحيدتي</p></header>
-<section id="messages" aria-live="polite"><div class="msg bot">سلام ❤️ أنا بيبيشا. فرحانة نكون معاك! نقدر نخدم كواجهة حتى بلا إنترنت بعد أول زيارة.</div></section>
-<form id="chat"><input id="entry" placeholder="اكتب رسالتك هنا..." autocomplete="off" required><button>إرسال</button></form>
-<div class="note">النسخة الحالية تحفظ واجهة التطبيق للعمل دون إنترنت بعد تحميلها أول مرة. الذكاء الاصطناعي والصوت والذاكرة لم تُربط بعد.</div>
+<div class="toolbar"><button type="button" id="voice">🎙️ تحدث</button><button type="button" id="speak">🔊 قراءة الرد</button><button type="button" id="clear">مسح المحادثة</button></div>
+<section id="messages" aria-live="polite"></section>
+<form id="chat"><input id="entry" placeholder="اكتب رسالتك هنا..." autocomplete="off" required><button type="submit">إرسال</button></form>
+<div class="note">تعمل الواجهة وتحفظ المحادثة على هذا الهاتف. الردود الحالية تجريبية وتعمل دون إنترنت؛ ربط الذكاء الاصطناعي الحقيقي يحتاج خادماً آمناً ومفتاح API.</div>
 </main>
 <script>
-const box=document.getElementById('messages'), form=document.getElementById('chat'), entry=document.getElementById('entry');
-form.addEventListener('submit',e=>{e.preventDefault();const v=entry.value.trim();if(!v)return;const m=document.createElement('div');m.className='msg user';m.textContent=v;box.appendChild(m);entry.value='';box.scrollTop=box.scrollHeight;});
-if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+const box=document.getElementById('messages'),form=document.getElementById('chat'),entry=document.getElementById('entry');
+let history=[];
+try{history=JSON.parse(localStorage.getItem('bibicha-chat')||'[]');if(!Array.isArray(history))history=[];}catch(e){history=[];}
+function add(role,text,save=true){const m=document.createElement('div');m.className='msg '+role;m.textContent=text;box.appendChild(m);box.scrollTop=box.scrollHeight;if(save){history.push({role,text});try{localStorage.setItem('bibicha-chat',JSON.stringify(history.slice(-100)));}catch(e){}}}
+function reply(q){const s=q.toLowerCase();if(/سلام|salam|مرحبا|bonjour/.test(s))return 'وعليكم السلام ❤️ أنا بيبيشا، راني هنا معاك.';if(/اسمك|شكون|من انت/.test(s))return 'أنا بيبيشا، وتقدر تناديني سارة أو وحيدتي 💜';if(/شكرا|merci/.test(s))return 'بلا مزية يا الغالي ❤️';if(/كيف حالك|واش راكي/.test(s))return 'لاباس الحمد لله، وفرحانة نهدر معاك 😊';if(/نحبك|احبك/.test(s))return 'كلامك حنون ❤️ أنا هنا باش نعاونك ونسمعلك.';return 'وصلتني رسالتك ❤️ حالياً هذي نسخة أولية بردود بسيطة دون إنترنت. الذكاء الاصطناعي الحقيقي مازال يحتاج ربط آمن بخدمة API.';}
+if(history.length){history.forEach(x=>add(x.role,x.text,false));}else add('bot','سلام ❤️ أنا بيبيشا. اكتبلّي واش حاب، ونبدأو مع بعض.');
+form.addEventListener('submit',e=>{e.preventDefault();const v=entry.value.trim();if(!v)return;add('user',v);entry.value='';const answer=reply(v);add('bot',answer);});
+document.getElementById('clear').addEventListener('click',()=>{history=[];localStorage.removeItem('bibicha-chat');box.innerHTML='';add('bot','رجعنا صفحة جديدة ❤️ أنا بيبيشا، واش نحكيو اليوم؟');});
+document.getElementById('speak').addEventListener('click',()=>{const last=[...box.querySelectorAll('.bot')].pop();if(!last||!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(last.textContent);u.lang='ar-DZ';speechSynthesis.cancel();speechSynthesis.speak(u);});
+document.getElementById('voice').addEventListener('click',()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){add('bot','التعرف على الصوت غير مدعوم في هذا المتصفح. استعمل الكتابة حالياً.');return;}const r=new SR();r.lang='ar-DZ';r.onresult=e=>{entry.value=e.results[0][0].transcript;form.requestSubmit();};r.onerror=()=>add('bot','ما قدرتش نسمعك. جرّب مرة أخرى أو اكتب رسالتك.');r.start();});
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 </script></body></html>

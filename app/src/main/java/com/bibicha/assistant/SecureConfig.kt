@@ -21,11 +21,12 @@ object SecureConfig {
     private const val MEMORY_KEY = "personal_memory_encrypted"
     private const val EMERGENCY_NUMBER_KEY = "emergency_number_encrypted"
     private const val NOTIFICATION_READING_KEY = "notification_reading_enabled"
+    private const val DEFAULT_WORKER_URL = "https://bibicha.mebarkia041.workers.dev"
 
     fun save(context: Context, workerUrl: String, token: String) {
         val normalizedUrl = workerUrl.trim().trimEnd('/')
         require(normalizedUrl.startsWith("https://") && normalizedUrl.endsWith(".workers.dev")) {
-            "أدخل رابط Cloudflare Worker الصحيح الذي يبدأ بـ https:// وينتهي بـ .workers.dev"
+            "رابط خادم بيبيشا غير صالح."
         }
         require(token.trim().length >= 32) { "رمز الربط يجب أن يكون 32 حرفاً على الأقل." }
         val encrypted = encrypt(token.trim())
@@ -36,7 +37,8 @@ object SecureConfig {
     }
 
     fun workerUrl(context: Context): String =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(URL_KEY, "").orEmpty()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(URL_KEY, DEFAULT_WORKER_URL).orEmpty().ifBlank { DEFAULT_WORKER_URL }
 
     fun token(context: Context): String {
         val encoded = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(TOKEN_KEY, null)
@@ -57,10 +59,8 @@ object SecureConfig {
         val trimmed = JSONArray()
         val start = (items.length() - 12).coerceAtLeast(0)
         for (index in start until items.length()) trimmed.put(items.getJSONObject(index))
-        val encrypted = encrypt(trimmed.toString())
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(HISTORY_KEY, encrypted)
-            .apply()
+            .putString(HISTORY_KEY, encrypt(trimmed.toString())).apply()
     }
 
     fun clearHistory(context: Context) {
@@ -95,17 +95,14 @@ object SecureConfig {
 
     fun setNotificationReadingEnabled(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putBoolean(NOTIFICATION_READING_KEY, enabled)
-            .apply()
+            .putBoolean(NOTIFICATION_READING_KEY, enabled).apply()
     }
 
     fun saveEmergencyNumber(context: Context, number: String) {
         val normalized = number.trim()
         require(normalized.matches(Regex("[+0-9٠-٩]{8,16}"))) { "أدخل رقم طوارئ صحيحاً." }
-        val encrypted = encrypt(normalized)
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(EMERGENCY_NUMBER_KEY, encrypted)
-            .apply()
+            .putString(EMERGENCY_NUMBER_KEY, encrypt(normalized)).apply()
     }
 
     fun emergencyNumber(context: Context): String {

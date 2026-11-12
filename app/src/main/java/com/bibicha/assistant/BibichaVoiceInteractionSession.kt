@@ -24,6 +24,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
     private var speaker: TextToSpeech? = null
     private var statusView: TextView? = null
     private var speakerReady = false
+    private var pendingSpeech: String? = null
     private var recognitionErrorCount = 0
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile private var sessionActive = false
@@ -45,8 +46,16 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
             speaker = TextToSpeech(context) { result ->
                 if (result == TextToSpeech.SUCCESS) {
                     val ar = speaker?.setLanguage(Locale("ar", "DZ")) ?: TextToSpeech.LANG_NOT_SUPPORTED
-                    if (ar < TextToSpeech.LANG_AVAILABLE) speaker?.setLanguage(Locale("ar"))
-                    speakerReady = true
+                    val languageResult = if (ar < TextToSpeech.LANG_AVAILABLE) {
+                        speaker?.setLanguage(Locale("ar")) ?: TextToSpeech.LANG_NOT_SUPPORTED
+                    } else ar
+                    speakerReady = languageResult >= TextToSpeech.LANG_AVAILABLE
+                    if (speakerReady) {
+                        pendingSpeech?.let { queued ->
+                            speaker?.speak(queued, TextToSpeech.QUEUE_FLUSH, null, "bibicha-response")
+                            pendingSpeech = null
+                        }
+                    }
                 }
             }
         }
@@ -284,7 +293,11 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
 
     private fun say(message: String) {
         statusView?.text = "💜 بيبيشا\n$message"
-        if (speakerReady) speaker?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "bibicha-response")
+        if (speakerReady) {
+            speaker?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "bibicha-response")
+        } else {
+            pendingSpeech = message
+        }
     }
 
     override fun onHide() {

@@ -497,8 +497,25 @@ class MainActivity : Activity() {
                     speakNextReply = false
                 }
             } catch (error: Exception) {
+                // Keep Emilia useful without paid services: if Cloudflare/OpenAI is
+                // unavailable, fall back to the limited on-device reply rules.
+                val reply = offlineReply(message)
+                SecureConfig.addHistory(this, "user", message)
+                SecureConfig.addHistory(this, "assistant", reply)
                 runOnUiThread {
-                    chatStatus.text = error.message ?: "صار خطأ في الاتصال. عاودي المحاولة."
+                    val history = SecureConfig.history(this)
+                    val lines = ArrayList<String>()
+                    for (index in 0 until history.length()) {
+                        val item = history.optJSONObject(index) ?: continue
+                        val role = if (item.optString("role") == "user") "أنت" else "إميليا"
+                        lines.add("$role: ${item.optString("content")}")
+                    }
+                    chatLog.text = lines.joinToString("\n\n")
+                    chatStatus.text = "الخدمة السحابية غير متاحة؛ استعملت الوضع المحلي المجاني (قدرات محدودة) 💜"
+                    if (speakNextReply) {
+                        if (chatTtsReady) chatTts?.speak(reply, TextToSpeech.QUEUE_FLUSH, null, "emilia-chat-reply")
+                        else pendingChatSpeech = reply
+                    }
                     speakNextReply = false
                 }
             } finally {

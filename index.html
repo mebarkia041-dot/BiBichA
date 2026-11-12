@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#8b5cf6"><title>BiBichA</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial;background:#f7f3ff;color:#241b35;min-height:100vh;display:flex;justify-content:center}
+.app{width:100%;max-width:520px;height:100dvh;background:#fff;display:flex;flex-direction:column;box-shadow:0 0 35px #32145b12}
+header{padding:20px;background:linear-gradient(135deg,#8b5cf6,#d946ef);color:white;text-align:center}
+header h1{margin:0;font-size:27px}header p{margin:5px 0 0;font-size:13px;opacity:.9}
+#messages{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+.msg{padding:12px 15px;border-radius:18px;max-width:85%;line-height:1.6;white-space:pre-wrap}
+.bot{background:#f1eaff;align-self:flex-start;border-bottom-right-radius:5px}
+.user{background:#8b5cf6;color:white;align-self:flex-end;border-bottom-left-radius:5px}
+form{display:flex;gap:8px;padding:12px;border-top:1px solid #eee}
+input{flex:1;min-width:0;border:1px solid #ddd;border-radius:24px;padding:13px;font-size:16px;outline:none}
+button{border:0;border-radius:24px;padding:0 18px;background:#8b5cf6;color:#fff;font-size:15px}
+.note{font-size:11px;color:#8a8195;text-align:center;padding:0 10px 10px}
+</style></head>
+<body><main class="app">
+<header><h1>💜 BiBichA</h1><p>بيبيشا • سارة • وحيدتي</p></header>
+<section id="messages" aria-live="polite"><div class="msg bot">سلام ❤️ أنا بيبيشا. فرحانة نكون معاك! هذي النسخة الأولى من واجهة التطبيق.</div></section>
+<form id="chat"><input id="entry" placeholder="اكتب رسالتك هنا..." autocomplete="off" required><button>إرسال</button></form>
+<div class="note">نسخة أولية للواجهة — الذكاء الاصطناعي والذاكرة الصوتية لم يتم ربطهما بعد.</div>
+</main>
+<script>
+const box=document.getElementById('messages'), form=document.getElementById('chat'), entry=document.getElementById('entry');
+form.addEventListener('submit',e=>{e.preventDefault();const v=entry.value.trim();if(!v)return;const m=document.createElement('div');m.className='msg user';m.textContent=v;box.appendChild(m);entry.value='';box.scrollTop=box.scrollHeight;});
+</script></body></html>

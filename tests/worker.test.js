@@ -187,3 +187,17 @@ test("unknown worker routes return not found", async () => {
   }), env());
   assert.equal(response.status, 404);
 });
+
+
+test("health responses are not cached", async () => {
+  const response = await worker.fetch(request("/health"), env());
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+});
+
+test("preflight from an unapproved origin is rejected", async () => {
+  const response = await worker.fetch(request("/chat", {
+    method: "OPTIONS",
+    origin: "https://bad.example"
+  }), env());
+  assert.equal(response.status, 403);
+});

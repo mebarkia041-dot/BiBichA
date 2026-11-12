@@ -23,11 +23,18 @@ export default {
       );
     }
 
-    // CORS is a browser policy, not authentication. Native clients need a separate
-    // authenticated route before this service is exposed to an Android APK.
-    if (!allowedOrigin || origin !== allowedOrigin) return new Response("Origin not allowed", { status: 403 });
+    // Browser clients are restricted by CORS. Native Android clients must present
+    // a separate secret token; CORS alone is never treated as authentication.
+    const validWebOrigin = Boolean(allowedOrigin && origin === allowedOrigin);
+    const authorization = request.headers.get("Authorization") || "";
+    const validNativeToken = Boolean(env.MOBILE_APP_TOKEN && authorization === `Bearer ${env.MOBILE_APP_TOKEN}`);
+    if (!validWebOrigin && !validNativeToken) {
+      return new Response("Unauthorized", { status: 401, headers: { "Cache-Control": "no-store" } });
+    }
 
-    const headers = corsHeaders(origin, allowedOrigin);
+    const headers = validWebOrigin
+      ? corsHeaders(origin, allowedOrigin)
+      : { "Cache-Control": "no-store" };
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (url.pathname !== "/chat" || request.method !== "POST") return new Response("Not found", { status: 404, headers });
     if (!request.headers.get("Content-Type")?.toLowerCase().includes("application/json")) {

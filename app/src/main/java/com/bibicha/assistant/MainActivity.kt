@@ -60,6 +60,31 @@ class MainActivity : Activity() {
             textSize = 16f
             setPadding(24, 12, 24, 16)
         }
+        val systemTitle = TextView(this).apply {
+            text = "إعدادات مساعد الهاتف"
+            textSize = 20f
+            setPadding(8, 20, 8, 8)
+        }
+        val assistantRoleButton = Button(this).apply {
+            text = "تعيين إميليا كمساعد الهاتف"
+            setOnClickListener { requestAssistantRole() }
+        }
+        val callScreeningButton = Button(this).apply {
+            text = "تفعيل إعلان المكالمات الواردة"
+            setOnClickListener { requestCallScreeningRole() }
+        }
+        val notificationButton = Button(this).apply {
+            text = "تفعيل قراءة إشعارات الرسائل"
+            setOnClickListener {
+                SecureConfig.setNotificationReadingEnabled(this@MainActivity, true)
+                try {
+                    startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
+                } catch (_: Exception) {
+                    Toast.makeText(this@MainActivity, "افتح إعدادات الإشعارات وفعّل وصول إميليا.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
         val emergencyTitle = TextView(this).apply {
             text = "مشاركة الموقع في الطوارئ"
             textSize = 20f
@@ -284,6 +309,10 @@ class MainActivity : Activity() {
             addView(sendChat)
             addView(voiceChat)
             addView(status)
+            addView(systemTitle)
+            addView(assistantRoleButton)
+            addView(callScreeningButton)
+            addView(notificationButton)
             addView(emergencyTitle)
             addView(emergencyNumber)
             addView(saveEmergency)

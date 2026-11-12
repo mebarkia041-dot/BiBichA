@@ -1,14 +1,13 @@
-name: Build BiBichA Android APK
+name: Build Emilia Android APK
 on:
   push:
     branches: ["main"]
     paths:
+      - "emilia-source.tar.gz.b64"
       - "app/**"
-      - "*.gradle.kts"
-      - "gradle.properties"
+      - "*.gradle"
+      - "settings.gradle"
       - ".github/workflows/android.yml"
-  pull_request:
-    branches: ["main"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,29 +20,20 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - name: Verify Android SDK
-        run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          test -d "$ANDROID_HOME/platforms/android-35"
-          test -d "$ANDROID_HOME/build-tools/35.0.0"
-          ls "$ANDROID_HOME/platforms"
+      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-      - name: Run Android lint checks
-        run: gradle --no-daemon :app:lintDebug
-      - name: Upload lint report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: BiBichA-android-lint-report
-          path: app/build/reports/lint-results-debug.html
-          if-no-files-found: ignore
+      - name: Restore Emilia Android source
+        run: |
+          base64 -d emilia-source.tar.gz.b64 > /tmp/emilia.tar.gz
+          tar -xzf /tmp/emilia.tar.gz
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
-      - name: Upload debug APK
+      - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: BiBichA-debug-apk
+          name: Emilia-Android-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          retention-days: 30

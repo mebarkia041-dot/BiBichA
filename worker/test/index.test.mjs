@@ -171,6 +171,31 @@ test("chat forwards a valid conversation and returns the model reply", async () 
   }
 });
 
+test("chat uses Cloudflare Workers AI without an OpenAI API key", async () => {
+  let modelInput;
+  const aiEnv = {
+    MOBILE_APP_TOKEN: TOKEN,
+    ALLOWED_ORIGIN: "https://example.com",
+    AI: {
+      run: async (model, input) => {
+        assert.equal(model, "@cf/meta/llama-3.1-8b-instruct");
+        modelInput = input;
+        return { response: "سلام، أنا إميليا 💜" };
+      }
+    }
+  };
+  const health = await worker.fetch(request("/health", { method: "GET" }), aiEnv);
+  assert.deepEqual(await health.json(), { service: "Emilia AI", configured: true });
+  const response = await worker.fetch(request("/chat", {
+    body: { message: "سلام", memory: ["يفضل الدارجة"] },
+    authorization: `Bearer ${TOKEN}`
+  }), aiEnv);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { reply: "سلام، أنا إميليا 💜" });
+  assert.match(modelInput.messages[0].content, /أنتِ إميليا/);
+  assert.match(modelInput.messages[0].content, /يفضل الدارجة/);
+});
+
 test("chat returns a safe error when the upstream provider fails", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => Response.json({ error: { message: "private upstream detail" } }, { status: 401 });

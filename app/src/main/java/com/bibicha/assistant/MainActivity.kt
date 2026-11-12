@@ -508,7 +508,47 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun handlePhoneCommand(message: String, chatStatus: TextView): Boolean {
+        val q = message.trim().lowercase(Locale.ROOT)
+        val apps = listOf(
+            listOf("واتساب", "whatsapp") to "com.whatsapp",
+            listOf("يوتيوب", "youtube") to "com.google.android.youtube",
+            listOf("خرائط", "maps", "الخريطة") to "com.google.android.apps.maps",
+            listOf("كروم", "chrome", "المتصفح") to "com.android.chrome",
+            listOf("انستغرام", "instagram") to "com.instagram.android",
+            listOf("فيسبوك", "facebook") to "com.facebook.katana",
+            listOf("رسائل", "sms", "messages") to "com.google.android.apps.messaging",
+            listOf("الهاتف", "اتصال", "dialer") to "com.google.android.dialer"
+        )
+        val isOpenRequest = listOf("افتح", "حل", "شغل", "روح ل", "open").any { q.contains(it) }
+        if (isOpenRequest) {
+            val target = apps.firstOrNull { (words, _) -> words.any { q.contains(it) } }
+            if (target != null) {
+                val launch = packageManager.getLaunchIntentForPackage(target.second)
+                if (launch != null) {
+                    startActivity(launch)
+                    chatStatus.text = "فتحتلك التطبيق 💜"
+                } else {
+                    chatStatus.text = "هذا التطبيق ما راهوش مثبت في هاتفك."
+                }
+                return true
+            }
+        }
+        val callPrefix = listOf("اتصل ب", "عيط ل", "رن ل", "call ")
+            .firstOrNull { q.startsWith(it) }
+        if (callPrefix != null) {
+            val number = message.trim().substring(callPrefix.length).trim()
+            if (number.isNotBlank()) {
+                startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number")))
+                chatStatus.text = "فتحتلك لوحة الاتصال. راجع الرقم واضغط اتصال بنفسك."
+                return true
+            }
+        }
+        return false
+    }
+
     private fun sendChatMessage(message: String, chatLog: TextView, chatStatus: TextView, sendButton: Button) {
+        if (handlePhoneCommand(message, chatStatus)) return
         val worker = SecureConfig.workerUrl(this)
         val token = try { SecureConfig.token(this) } catch (_: Exception) { "" }
         if (worker.isBlank() || token.isBlank()) {

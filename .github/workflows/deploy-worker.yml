@@ -1,0 +1,45 @@
+name: Deploy Emilia AI Worker
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "worker/**"
+      - ".github/workflows/deploy-worker.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test Worker
+        working-directory: worker
+        run: |
+          npm test
+      - name: Deploy Worker to Cloudflare
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing GitHub secret CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing GitHub secret CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          npx --yes wrangler@4 deploy
+      - name: Configure mobile app token
+        working-directory: worker
+        env:
+          MOBILE_APP_TOKEN: ${{ secrets.MOBILE_APP_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$MOBILE_APP_TOKEN" || { echo "Missing GitHub secret MOBILE_APP_TOKEN"; exit 1; }
+          printf '%s' "$MOBILE_APP_TOKEN" | npx --yes wrangler@4 secret put MOBILE_APP_TOKEN
+      - name: Verify deployed Worker health
+        run: |
+          curl --fail --silent --show-error https://bibicha.mebarkia041.workers.dev/health

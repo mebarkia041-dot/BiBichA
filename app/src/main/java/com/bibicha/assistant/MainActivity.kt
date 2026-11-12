@@ -235,7 +235,7 @@ class MainActivity : Activity() {
             setPadding(8, 24, 8, 8)
         }
         val chatStatus = TextView(this).apply {
-            text = "اكتبي رسالة لإميليا بعد إعداد رابط الخادم."
+            text = "اكتب رسالة لإميليا بعد إعداد رابط الخادم."
             textSize = 14f
             setPadding(8, 4, 8, 8)
         }
@@ -245,7 +245,7 @@ class MainActivity : Activity() {
             setTextIsSelectable(true)
         }
         val chatInput = EditText(this).apply {
-            hint = "اكتبي رسالتك هنا..."
+            hint = "اكتب رسالتك هنا..."
             minLines = 2
             maxLines = 4
         }
@@ -254,7 +254,7 @@ class MainActivity : Activity() {
             setOnClickListener {
                 val message = chatInput.text.toString().trim()
                 if (message.isBlank()) {
-                    chatInput.error = "اكتبي رسالة أولاً"
+                    chatInput.error = "اكتب رسالة أولاً"
                 } else {
                     chatInput.text?.clear()
                     sendChatMessage(message, chatLog, chatStatus, this)
@@ -262,7 +262,7 @@ class MainActivity : Activity() {
             }
         }
         val voiceChat = Button(this).apply {
-            text = "🎙️ تكلمي مع إميليا"
+            text = "🎙️ تكلم مع إميليا"
             setOnClickListener { startVoiceInput() }
         }
         chatLogView = chatLog
@@ -276,7 +276,7 @@ class MainActivity : Activity() {
                 val role = if (item.optString("role") == "user") "أنت" else "إميليا"
                 lines.add("$role: ${item.optString("content")}")
             }
-            chatLog.text = lines.joinToString("\n\n").ifBlank { "مازال ما بديناش المحادثة. قوليلي سلام 💜" }
+            chatLog.text = lines.joinToString("\n\n").ifBlank { "مازال ما بديناش المحادثة. قولّيلي سلام 💜" }
         }
         refreshChatLog()
 
@@ -323,8 +323,8 @@ class MainActivity : Activity() {
         val token = inputToken.trim().ifBlank {
             try { SecureConfig.token(this) } catch (_: Exception) { "" }
         }
-        if (!base.startsWith("https://") || !base.endsWith(".workers.dev")) {
-            statusView.text = "أدخل رابط Worker صحيحاً ينتهي بـ .workers.dev."
+        if (!SecureConfig.isValidWorkerUrl(base)) {
+            statusView.text = "أدخل عنوان Workers.dev صحيحاً دون مسار إضافي."
             return
         }
         if (token.length < 32) {
@@ -409,7 +409,7 @@ class MainActivity : Activity() {
         val worker = SecureConfig.workerUrl(this)
         val token = try { SecureConfig.token(this) } catch (_: Exception) { "" }
         if (worker.isBlank() || token.isBlank()) {
-            chatStatus.text = "أكملي إعداد رابط Worker ورمز Android أولاً."
+            chatStatus.text = "أكمل إعداد رابط Worker ورمز Android أولاً."
             return
         }
         sendButton.isEnabled = false

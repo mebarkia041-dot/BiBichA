@@ -318,7 +318,11 @@ class MainActivity : Activity() {
 
     private fun testWorkerConnection(inputUrl: String, inputToken: String, statusView: TextView) {
         val base = inputUrl.trim().trimEnd('/').removeSuffix("/chat")
-        val token = inputToken.trim()
+        // The save action clears the password field after encrypting the token.
+        // Reuse the encrypted token when the field is blank so "save, then test" works.
+        val token = inputToken.trim().ifBlank {
+            try { SecureConfig.token(this) } catch (_: Exception) { "" }
+        }
         if (!base.startsWith("https://") || !base.endsWith(".workers.dev")) {
             statusView.text = "أدخل رابط Worker صحيحاً ينتهي بـ .workers.dev."
             return

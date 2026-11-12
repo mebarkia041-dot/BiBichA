@@ -51,7 +51,7 @@ class MainActivity : Activity() {
             }
         }
         val title = TextView(this).apply {
-            text = "💜 بيبيشا\nمساعدتك الذكية"
+            text = "💜 إميليا\nمساعدتك الذكية"
             textSize = 28f
             setPadding(24, 36, 24, 16)
         }
@@ -61,7 +61,7 @@ class MainActivity : Activity() {
             setPadding(24, 12, 24, 16)
         }
         val activate = Button(this).apply {
-            text = "تعيين بيبيشا كمساعد الهاتف"
+            text = "تعيين إميليا كمساعد الهاتف"
             setOnClickListener { requestAssistantRole() }
         }
         val notifications = Button(this).apply {
@@ -80,7 +80,7 @@ class MainActivity : Activity() {
                 text = if (SecureConfig.notificationReadingEnabled(this@MainActivity)) {
                     "إيقاف قراءة محتوى الإشعارات"
                 } else {
-                    "السماح لبيبيشا بقراءة الإشعارات"
+                    "السماح لإميليا بقراءة الإشعارات"
                 }
             }
             refreshLabel()
@@ -91,7 +91,7 @@ class MainActivity : Activity() {
                 Toast.makeText(
                     this@MainActivity,
                     if (enabled) "تفعّلت القراءة الصوتية. يلزم أيضاً إذن الإشعارات من إعدادات Android."
-                    else "توقفت بيبيشا عن قراءة محتوى الإشعارات.",
+                    else "توقفت إميليا عن قراءة محتوى الإشعارات.",
                     Toast.LENGTH_LONG
                 ).show()
                 if (enabled) {
@@ -132,7 +132,7 @@ class MainActivity : Activity() {
             setPadding(8, 20, 8, 8)
         }
         val configHint = TextView(this).apply {
-            text = "رابط خادم بيبيشا مضبوط مسبقاً. رمز الربط فقط يُحفظ مشفّراً على الهاتف."
+            text = "رابط خادم إميليا مضبوط مسبقاً. رمز الربط فقط يُحفظ مشفّراً على الهاتف."
             textSize = 14f
             setPadding(8, 0, 8, 8)
         }
@@ -160,7 +160,7 @@ class MainActivity : Activity() {
             }
         }
         val testConnection = Button(this).apply {
-            text = "اختبار اتصال خادم بيبيشا"
+            text = "اختبار اتصال خادم إميليا"
             setOnClickListener { testWorkerConnection(workerUrl.text.toString(), token.text.toString(), status) }
         }
         val clearHistory = Button(this).apply {
@@ -189,7 +189,7 @@ class MainActivity : Activity() {
             minLines = 2
         }
         val saveMemory = Button(this).apply {
-            text = "احفظ المعلومة في ذاكرة بيبيشا"
+            text = "احفظ المعلومة في ذاكرة إميليا"
             setOnClickListener {
                 try {
                     SecureConfig.addMemory(this@MainActivity, memoryInput.text.toString())
@@ -208,7 +208,7 @@ class MainActivity : Activity() {
                     saved.optString(index).takeIf { it.isNotBlank() }?.let { "• $it" }
                 }.joinToString("\n")
                 AlertDialog.Builder(this@MainActivity)
-                    .setTitle("ذاكرة بيبيشا")
+                    .setTitle("ذاكرة إميليا")
                     .setMessage(details.ifBlank { "ما حفظنا حتى معلومة بعد." })
                     .setPositiveButton("إغلاق", null)
                     .show()
@@ -230,12 +230,12 @@ class MainActivity : Activity() {
         }
 
         val chatTitle = TextView(this).apply {
-            text = "محادثة بيبيشا 💜"
+            text = "محادثة إميليا 💜"
             textSize = 22f
             setPadding(8, 24, 8, 8)
         }
         val chatStatus = TextView(this).apply {
-            text = "اكتبي رسالة لبيبيشا بعد إعداد رابط الخادم."
+            text = "اكتبي رسالة لإميليا بعد إعداد رابط الخادم."
             textSize = 14f
             setPadding(8, 4, 8, 8)
         }
@@ -250,7 +250,7 @@ class MainActivity : Activity() {
             maxLines = 4
         }
         val sendChat = Button(this).apply {
-            text = "إرسال إلى بيبيشا"
+            text = "إرسال إلى إميليا"
             setOnClickListener {
                 val message = chatInput.text.toString().trim()
                 if (message.isBlank()) {
@@ -262,7 +262,7 @@ class MainActivity : Activity() {
             }
         }
         val voiceChat = Button(this).apply {
-            text = "🎙️ تكلمي مع بيبيشا"
+            text = "🎙️ تكلمي مع إميليا"
             setOnClickListener { startVoiceInput() }
         }
         chatLogView = chatLog
@@ -273,7 +273,7 @@ class MainActivity : Activity() {
             val lines = ArrayList<String>()
             for (index in 0 until history.length()) {
                 val item = history.optJSONObject(index) ?: continue
-                val role = if (item.optString("role") == "user") "أنت" else "بيبيشا"
+                val role = if (item.optString("role") == "user") "أنت" else "إميليا"
                 lines.add("$role: ${item.optString("content")}")
             }
             chatLog.text = lines.joinToString("\n\n").ifBlank { "مازال ما بديناش المحادثة. قوليلي سلام 💜" }
@@ -379,7 +379,7 @@ class MainActivity : Activity() {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar-DZ")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ar-DZ")
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "تكلم مع بيبيشا")
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "تكلم مع إميليا")
         }
         try {
             startActivityForResult(intent, REQUEST_VOICE_CHAT)
@@ -396,7 +396,7 @@ class MainActivity : Activity() {
             return
         }
         sendButton.isEnabled = false
-        chatStatus.text = "بيبيشا راهي تكتبلك..."
+        chatStatus.text = "إميليا راهي تكتبلك..."
         Thread {
             var connection: HttpURLConnection? = null
             try {
@@ -421,7 +421,7 @@ class MainActivity : Activity() {
                     throw IllegalStateException(json.optString("error", "تعذر الاتصال بالخادم ($code)."))
                 }
                 val reply = json.optString("reply").trim()
-                if (reply.isBlank()) throw IllegalStateException("ما وصلنيش رد واضح من بيبيشا.")
+                if (reply.isBlank()) throw IllegalStateException("ما وصلنيش رد واضح من إميليا.")
                 SecureConfig.addHistory(this, "user", message)
                 SecureConfig.addHistory(this, "assistant", reply)
                 runOnUiThread {
@@ -429,7 +429,7 @@ class MainActivity : Activity() {
                     val lines = ArrayList<String>()
                     for (index in 0 until history.length()) {
                         val item = history.optJSONObject(index) ?: continue
-                        val role = if (item.optString("role") == "user") "أنت" else "بيبيشا"
+                        val role = if (item.optString("role") == "user") "أنت" else "إميليا"
                         lines.add("$role: ${item.optString("content")}")
                     }
                     chatLog.text = lines.joinToString("\n\n")
@@ -582,7 +582,7 @@ class MainActivity : Activity() {
             return
         }
         if (roles.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
-            Toast.makeText(this, "بيبيشا مفعّلة بالفعل لإعلان المكالمات.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "إميليا مفعّلة بالفعل لإعلان المكالمات.", Toast.LENGTH_SHORT).show()
             return
         }
         @Suppress("DEPRECATION")
@@ -600,7 +600,7 @@ class MainActivity : Activity() {
             return
         }
         if (roles.isRoleHeld(RoleManager.ROLE_ASSISTANT)) {
-            Toast.makeText(this, "بيبيشا معيّنة بالفعل كمساعد الهاتف.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "إميليا معيّنة بالفعل كمساعد الهاتف.", Toast.LENGTH_SHORT).show()
             return
         }
         @Suppress("DEPRECATION")
@@ -628,7 +628,7 @@ class MainActivity : Activity() {
             }
         }
         if (requestCode == REQUEST_ASSISTANT) {
-            val message = if (resultCode == RESULT_OK) "تم قبول تعيين بيبيشا كمساعد." else "لم يتم تغيير المساعد."
+            val message = if (resultCode == RESULT_OK) "تم قبول تعيين إميليا كمساعد." else "لم يتم تغيير المساعد."
             Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         }
         if (requestCode == REQUEST_CALL_SCREENING) {

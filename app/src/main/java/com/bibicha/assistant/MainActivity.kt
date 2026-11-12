@@ -32,6 +32,7 @@ class MainActivity : Activity() {
     private var chatTts: TextToSpeech? = null
     private var chatTtsReady = false
     private var speakNextReply = false
+    private var pendingChatSpeech: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +41,12 @@ class MainActivity : Activity() {
                 val arabic = chatTts?.setLanguage(Locale("ar", "DZ")) ?: TextToSpeech.LANG_NOT_SUPPORTED
                 val language = if (arabic < TextToSpeech.LANG_AVAILABLE) chatTts?.setLanguage(Locale("ar")) ?: TextToSpeech.LANG_NOT_SUPPORTED else arabic
                 chatTtsReady = language >= TextToSpeech.LANG_AVAILABLE
+                if (chatTtsReady) {
+                    pendingChatSpeech?.let { pending ->
+                        chatTts?.speak(pending, TextToSpeech.QUEUE_FLUSH, null, "bibicha-chat-reply")
+                        pendingChatSpeech = null
+                    }
+                }
             }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
@@ -393,8 +400,12 @@ class MainActivity : Activity() {
                     }
                     chatLog.text = lines.joinToString("\n\n")
                     chatStatus.text = "وصل الرد 💜"
-                    if (speakNextReply && chatTtsReady) {
-                        chatTts?.speak(reply, TextToSpeech.QUEUE_FLUSH, null, "bibicha-chat-reply")
+                    if (speakNextReply) {
+                        if (chatTtsReady) {
+                            chatTts?.speak(reply, TextToSpeech.QUEUE_FLUSH, null, "bibicha-chat-reply")
+                        } else {
+                            pendingChatSpeech = reply
+                        }
                     }
                     speakNextReply = false
                 }
@@ -411,6 +422,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        pendingChatSpeech = null
         chatTts?.stop()
         chatTts?.shutdown()
         chatTts = null

@@ -161,7 +161,7 @@ class MainActivity : Activity() {
         }
         val testConnection = Button(this).apply {
             text = "اختبار اتصال خادم بيبيشا"
-            setOnClickListener { testWorkerConnection(workerUrl.text.toString(), status) }
+            setOnClickListener { testWorkerConnection(workerUrl.text.toString(), token.text.toString(), status) }
         }
         val clearHistory = Button(this).apply {
             text = "مسح ذاكرة المحادثة المحلية"
@@ -316,34 +316,40 @@ class MainActivity : Activity() {
         if (intent.getBooleanExtra(EXTRA_EMERGENCY_SHARE, false)) requestEmergencyLocation()
     }
 
-    private fun testWorkerConnection(inputUrl: String, statusView: TextView) {
+    private fun testWorkerConnection(inputUrl: String, inputToken: String, statusView: TextView) {
         val base = inputUrl.trim().trimEnd('/').removeSuffix("/chat")
+        val token = inputToken.trim()
         if (!base.startsWith("https://") || !base.endsWith(".workers.dev")) {
             statusView.text = "أدخل رابط Worker صحيحاً ينتهي بـ .workers.dev."
             return
         }
-        statusView.text = "راني نختبر اتصال الخادم..."
+        if (token.length < 32) {
+            statusView.text = "أدخل رمز الربط أولاً (32 حرفاً على الأقل)، ثم احفظه واختبر الاتصال."
+            return
+        }
+        statusView.text = "راني نتحقق من رابط الخادم ورمز الربط..."
         Thread {
             var connection: HttpURLConnection? = null
             try {
-                connection = (URL("$base/health").openConnection() as HttpURLConnection).apply {
+                connection = (URL("$base/auth-check").openConnection() as HttpURLConnection).apply {
                     requestMethod = "GET"
                     connectTimeout = 10000
                     readTimeout = 10000
+                    setRequestProperty("Authorization", "Bearer $token")
                     setRequestProperty("Cache-Control", "no-cache")
                 }
                 val code = connection.responseCode
                 val stream = if (code in 200..299) connection.inputStream else connection.errorStream
                 val body = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
                 val data = JSONObject(body.ifBlank { "{}" })
-                if (code !in 200..299) throw IllegalStateException("الخادم رجّع الخطأ $code.")
-                val configured = data.optBoolean("configured", false)
+                if (code !in 200..299 || !data.optBoolean("authorized", false)) {
+                    throw IllegalStateException(
+                        if (code == 401) "رمز الربط غير صحيح. راجع MOBILE_APP_TOKEN في Cloudflare."
+                        else "الخادم رجّع الخطأ $code."
+                    )
+                }
                 runOnUiThread {
-                    statusView.text = if (configured) {
-                        "الخادم متصل ومفتاح الذكاء الاصطناعي موجود. هذا الاختبار لا يتحقق من رمز الهاتف."
-                    } else {
-                        "الخادم متصل، لكن مفتاح OpenAI API غير مضبوط في Cloudflare."
-                    }
+                    statusView.text = "نجح الاتصال بالخادم ورمز الربط صحيح ✅ جرّب إرسال رسالة لبدء المحادثة."
                 }
             } catch (error: Exception) {
                 runOnUiThread {

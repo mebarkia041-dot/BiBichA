@@ -1,1 +1,1 @@
-Retry Android build with SDK manager configured.
+Trigger verified release APK rebuild; confirm package com.emilia.assistant version 1.0.2.

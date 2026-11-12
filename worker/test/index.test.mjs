@@ -178,7 +178,7 @@ test("chat uses Cloudflare Workers AI without an OpenAI API key", async () => {
     ALLOWED_ORIGIN: "https://example.com",
     AI: {
       run: async (model, input) => {
-        assert.equal(model, "@cf/meta/llama-3.1-8b-instruct");
+        assert.equal(model, "@cf/meta/llama-3.1-8b-instruct-fp8-fast");
         modelInput = input;
         return { response: "سلام، أنا إميليا 💜" };
       }

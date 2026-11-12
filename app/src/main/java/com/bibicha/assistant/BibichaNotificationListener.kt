@@ -15,8 +15,9 @@ class BibichaNotificationListener : NotificationListenerService() {
         super.onCreate()
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                tts?.setLanguage(Locale("ar", "DZ"))
-                ready = true
+                val arabic = tts?.setLanguage(Locale("ar", "DZ")) ?: TextToSpeech.LANG_NOT_SUPPORTED
+                val language = if (arabic < TextToSpeech.LANG_AVAILABLE) tts?.setLanguage(Locale("ar")) ?: TextToSpeech.LANG_NOT_SUPPORTED else arabic
+                ready = language >= TextToSpeech.LANG_AVAILABLE
             }
         }
     }

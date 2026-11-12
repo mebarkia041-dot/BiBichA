@@ -130,7 +130,7 @@ class MainActivity : Activity() {
             setPadding(8, 20, 8, 8)
         }
         val configHint = TextView(this).apply {
-            text = "أدخل رابط Worker ورمز الربط الذي تضبطه في Cloudflare. لا تضع مفتاح OpenAI هنا."
+            text = "رابط خادم بيبيشا مضبوط مسبقاً. رمز الربط فقط يُحفظ مشفّراً على الهاتف."
             textSize = 14f
             setPadding(8, 0, 8, 8)
         }

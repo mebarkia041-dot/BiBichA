@@ -5,26 +5,32 @@ import android.app.role.RoleManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+            checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
             requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 42)
         }
+
         val title = TextView(this).apply {
             text = "💜 بيبيشا\nمساعدتك الذكية"
             textSize = 28f
-            setPadding(24, 48, 24, 24)
+            setPadding(24, 36, 24, 16)
         }
         val status = TextView(this).apply {
-            text = "هذه نسخة Android أولية. يمكنك طلب تعيين بيبيشا كمساعد الهاتف إذا كان جهازك يدعم ذلك."
+            text = "نسخة أولية: أوامر صوتية لفتح التطبيقات وقراءة إشعارات المراسلة بعد تفعيل الإذن."
             textSize = 16f
-            setPadding(24, 16, 24, 24)
+            setPadding(24, 12, 24, 16)
         }
         val activate = Button(this).apply {
             text = "تعيين بيبيشا كمساعد الهاتف"
@@ -36,14 +42,55 @@ class MainActivity : Activity() {
                 startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
             }
         }
-        setContentView(LinearLayout(this).apply {
+
+        val configTitle = TextView(this).apply {
+            text = "ربط الذكاء الاصطناعي"
+            textSize = 20f
+            setPadding(8, 20, 8, 8)
+        }
+        val configHint = TextView(this).apply {
+            text = "أدخل رابط Worker ورمز الربط الذي تضبطه في Cloudflare. لا تضع مفتاح OpenAI هنا."
+            textSize = 14f
+            setPadding(8, 0, 8, 8)
+        }
+        val workerUrl = EditText(this).apply {
+            hint = "https://اسم-العامل.workers.dev"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            setSingleLine(true)
+            setText(SecureConfig.workerUrl(this@MainActivity))
+        }
+        val token = EditText(this).apply {
+            hint = "رمز ربط Android"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setSingleLine(true)
+        }
+        val saveConfig = Button(this).apply {
+            text = "حفظ إعدادات الربط بأمان"
+            setOnClickListener {
+                try {
+                    SecureConfig.save(this@MainActivity, workerUrl.text.toString(), token.text.toString())
+                    token.text?.clear()
+                    Toast.makeText(this@MainActivity, "تم حفظ الرابط والرمز مشفّراً على الهاتف.", Toast.LENGTH_LONG).show()
+                } catch (error: Exception) {
+                    Toast.makeText(this@MainActivity, error.message ?: "تعذر حفظ الإعدادات.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24, 24, 24, 24)
+            setPadding(20, 16, 20, 24)
             addView(title)
             addView(status)
             addView(activate)
             addView(notifications)
-        })
+            addView(configTitle)
+            addView(configHint)
+            addView(workerUrl)
+            addView(token)
+            addView(saveConfig)
+        }
+        setContentView(ScrollView(this).apply { addView(content) })
     }
 
     private fun requestAssistantRole() {

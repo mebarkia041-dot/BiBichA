@@ -56,7 +56,10 @@ export default {
       } catch {
         return Response.json({ error: "محتوى الطلب غير صالح؛ أعد المحاولة." }, { status: 400, headers });
       }
-      const message = String(body.message || "").trim();
+      if (!body || typeof body !== "object" || Array.isArray(body) || typeof body.message !== "string") {
+        return Response.json({ error: "بيانات الرسالة غير صالحة." }, { status: 400, headers });
+      }
+      const message = body.message.trim();
       const history = Array.isArray(body.history) ? body.history.slice(-12) : [];
       const memory = Array.isArray(body.memory)
         ? body.memory.filter(x => typeof x === "string").slice(-30).map(x => x.slice(0, 500))
@@ -85,7 +88,12 @@ export default {
         signal: AbortSignal.timeout(30000)
       });
 
-      const data = await upstream.json();
+      let data;
+      try {
+        data = await upstream.json();
+      } catch {
+        return Response.json({ error: "وصل رد غير مفهوم من خدمة الذكاء الاصطناعي." }, { status: 502, headers });
+      }
       if (!upstream.ok) {
         return Response.json({ error: "تعذر الاتصال بخدمة الذكاء الاصطناعي حالياً." }, { status: 502, headers });
       }

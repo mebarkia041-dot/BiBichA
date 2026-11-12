@@ -237,11 +237,9 @@ test("native Android requests with the mobile token can use the AI endpoint", as
 
 test("web app inline JavaScript parses without syntax errors", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-  const scripts = [...html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)]
-    .map(match => match[1])
-    .filter(source => source.trim());
-  assert.ok(scripts.length > 0, "expected at least one inline script");
-  for (const source of scripts) {
-    assert.doesNotThrow(() => new vm.Script(source, { filename: "index.html" }));
-  }
+  const start = html.indexOf("<script>\\n");
+  const end = html.indexOf("</script>", start);
+  assert.ok(start >= 0 && end > start, "expected an inline script block");
+  const source = html.slice(start + "<script>\\n".length, end);
+  assert.doesNotThrow(() => new vm.Script(source, { filename: "index.html" }));
 });

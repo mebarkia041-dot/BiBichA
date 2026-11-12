@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.text.InputType
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
@@ -779,40 +780,67 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun openFirstAvailableSettings(vararg actions: String): Boolean {
+        for (action in actions) {
+            try {
+                startActivity(Intent(action))
+                return true
+            } catch (_: Exception) {
+                // Try the next settings screen supported by this Android/Oppo build.
+            }
+        }
+        Toast.makeText(this, "ما قدرناش نفتحو إعدادات أندرويد. افتح إعدادات الهاتف وابحث عن التطبيقات الافتراضية.", Toast.LENGTH_LONG).show()
+        return false
+    }
+
     private fun requestCallScreeningRole() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            Toast.makeText(this, "ميزة إعلان المتصل تحتاج Android 10 أو أحدث.", Toast.LENGTH_LONG).show()
-            return
+        Toast.makeText(this, "نفتحو إعداد إعلان المكالمات…", Toast.LENGTH_SHORT).show()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val roles = getSystemService(RoleManager::class.java)
+                if (roles != null && roles.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
+                    if (roles.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
+                        Toast.makeText(this, "إميليا مفعّلة بالفعل لإعلان المكالمات.", Toast.LENGTH_LONG).show()
+                        return
+                    }
+                    @Suppress("DEPRECATION")
+                    startActivityForResult(roles.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING), REQUEST_CALL_SCREENING)
+                    return
+                }
+            } catch (_: Exception) {
+                // Fall back to Android settings below.
+            }
         }
-        val roles = getSystemService(RoleManager::class.java)
-        if (roles == null || !roles.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
-            Toast.makeText(this, "هذا الهاتف لا يتيح دور فحص المكالمات.", Toast.LENGTH_LONG).show()
-            return
-        }
-        if (roles.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
-            Toast.makeText(this, "إميليا مفعّلة بالفعل لإعلان المكالمات.", Toast.LENGTH_SHORT).show()
-            return
-        }
-        @Suppress("DEPRECATION")
-        startActivityForResult(roles.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING), REQUEST_CALL_SCREENING)
+        openFirstAvailableSettings(
+            "android.settings.MANAGE_DEFAULT_APPS_SETTINGS",
+            "android.settings.CALL_SCREENING_SETTINGS",
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+        )
     }
 
     private fun requestAssistantRole() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            Toast.makeText(this, "تعيين المساعد الافتراضي بهذه الطريقة يحتاج Android 10 أو أحدث.", Toast.LENGTH_LONG).show()
-            return
+        Toast.makeText(this, "نفتحو إعداد اختيار المساعد…", Toast.LENGTH_SHORT).show()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val roles = getSystemService(RoleManager::class.java)
+                if (roles != null && roles.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) {
+                    if (roles.isRoleHeld(RoleManager.ROLE_ASSISTANT)) {
+                        Toast.makeText(this, "إميليا معيّنة بالفعل كمساعد الهاتف.", Toast.LENGTH_LONG).show()
+                        return
+                    }
+                    @Suppress("DEPRECATION")
+                    startActivityForResult(roles.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT), REQUEST_ASSISTANT)
+                    return
+                }
+            } catch (_: Exception) {
+                // ColorOS may not expose the role picker; try its settings screens.
+            }
         }
-        val roles = getSystemService(RoleManager::class.java)
-        if (roles == null || !roles.isRoleAvailable(RoleManager.ROLE_ASSISTANT)) {
-            Toast.makeText(this, "هذا الجهاز لا يتيح دور المساعد عبر هذه الواجهة.", Toast.LENGTH_LONG).show()
-            return
-        }
-        if (roles.isRoleHeld(RoleManager.ROLE_ASSISTANT)) {
-            Toast.makeText(this, "إميليا معيّنة بالفعل كمساعد الهاتف.", Toast.LENGTH_SHORT).show()
-            return
-        }
-        @Suppress("DEPRECATION")
-        startActivityForResult(roles.createRequestRoleIntent(RoleManager.ROLE_ASSISTANT), REQUEST_ASSISTANT)
+        openFirstAvailableSettings(
+            "android.settings.ASSIST_SETTINGS",
+            "android.settings.VOICE_INPUT_SETTINGS",
+            Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS
+        )
     }
 
     @Deprecated("Android role result callback")

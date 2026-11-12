@@ -18,6 +18,7 @@ object SecureConfig {
     private const val URL_KEY = "worker_url"
     private const val TOKEN_KEY = "mobile_token_encrypted"
     private const val HISTORY_KEY = "conversation_history_encrypted"
+    private const val EMERGENCY_NUMBER_KEY = "emergency_number_encrypted"
 
     fun save(context: Context, workerUrl: String, token: String) {
         val normalizedUrl = workerUrl.trim().trimEnd('/')
@@ -62,6 +63,21 @@ object SecureConfig {
 
     fun clearHistory(context: Context) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(HISTORY_KEY).apply()
+    }
+
+    fun saveEmergencyNumber(context: Context, number: String) {
+        val normalized = number.trim()
+        require(normalized.matches(Regex("[+0-9٠-٩]{8,16}"))) { "أدخل رقم طوارئ صحيحاً." }
+        val encrypted = encrypt(normalized)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(EMERGENCY_NUMBER_KEY, encrypted)
+            .apply()
+    }
+
+    fun emergencyNumber(context: Context): String {
+        val encoded = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(EMERGENCY_NUMBER_KEY, null)
+            ?: return ""
+        return try { decrypt(encoded) } catch (_: Exception) { "" }
     }
 
     private fun getOrCreateKey(): SecretKey {

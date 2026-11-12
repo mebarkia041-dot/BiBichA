@@ -157,6 +157,10 @@ class MainActivity : Activity() {
                 }
             }
         }
+        val testConnection = Button(this).apply {
+            text = "اختبار اتصال خادم بيبيشا"
+            setOnClickListener { testWorkerConnection(workerUrl.text.toString(), status) }
+        }
         val clearHistory = Button(this).apply {
             text = "مسح ذاكرة المحادثة المحلية"
             setOnClickListener {
@@ -270,6 +274,7 @@ class MainActivity : Activity() {
             addView(workerUrl)
             addView(token)
             addView(saveConfig)
+            addView(testConnection)
             addView(clearHistory)
             addView(memoryTitle)
             addView(memoryInput)
@@ -278,6 +283,45 @@ class MainActivity : Activity() {
         }
         setContentView(ScrollView(this).apply { addView(content) })
         if (intent.getBooleanExtra(EXTRA_EMERGENCY_SHARE, false)) requestEmergencyLocation()
+    }
+
+    private fun testWorkerConnection(inputUrl: String, statusView: TextView) {
+        val base = inputUrl.trim().trimEnd('/').removeSuffix("/chat")
+        if (!base.startsWith("https://") || !base.endsWith(".workers.dev")) {
+            statusView.text = "أدخل رابط Worker صحيحاً ينتهي بـ .workers.dev."
+            return
+        }
+        statusView.text = "راني نختبر اتصال الخادم..."
+        Thread {
+            var connection: HttpURLConnection? = null
+            try {
+                connection = (URL("$base/health").openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 10000
+                    readTimeout = 10000
+                    setRequestProperty("Cache-Control", "no-cache")
+                }
+                val code = connection.responseCode
+                val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+                val body = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                val data = JSONObject(body.ifBlank { "{}" })
+                if (code !in 200..299) throw IllegalStateException("الخادم رجّع الخطأ $code.")
+                val configured = data.optBoolean("configured", false)
+                runOnUiThread {
+                    statusView.text = if (configured) {
+                        "الخادم متصل ومفتاح الذكاء الاصطناعي موجود. هذا الاختبار لا يتحقق من رمز الهاتف."
+                    } else {
+                        "الخادم متصل، لكن مفتاح OpenAI API غير مضبوط في Cloudflare."
+                    }
+                }
+            } catch (error: Exception) {
+                runOnUiThread {
+                    statusView.text = error.message ?: "تعذر الوصول للخادم. تحقق من الرابط والإنترنت."
+                }
+            } finally {
+                connection?.disconnect()
+            }
+        }.start()
     }
 
     private fun startVoiceInput() {

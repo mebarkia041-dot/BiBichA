@@ -7,6 +7,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.RecognitionListener
@@ -99,6 +100,37 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
     private fun handleCommand(raw: String) {
         val command = raw.lowercase(Locale.ROOT)
         statusView?.text = "قلت: $raw"
+        if (listOf("ابعثي رسالة", "ابعث رسالة", "أرسلي رسالة", "ارسل رسالة", "send message").any { command.contains(it) }) {
+            val phoneMatch = Regex("[+0-9٠-٩]{8,}").find(raw)
+            if (phoneMatch == null) {
+                say("باش نحضرلك رسالة، قوللي رقم الهاتف مع الكلام اللي حاب تبعثو.")
+                return
+            }
+            val phone = phoneMatch.value.map { digit ->
+                when (digit) {
+                    '٠' -> '0'; '١' -> '1'; '٢' -> '2'; '٣' -> '3'; '٤' -> '4'
+                    '٥' -> '5'; '٦' -> '6'; '٧' -> '7'; '٨' -> '8'; '٩' -> '9'
+                    else -> digit
+                }
+            }.joinToString("")
+            val bodyMarker = listOf("قولي", "قوليلو", "الرسالة", "محتوى").firstOrNull { command.contains(it) }
+            val body = if (bodyMarker != null) raw.substringAfter(bodyMarker).trim() else raw.substringAfter(phoneMatch.value).trim()
+            if (body.isBlank()) {
+                say("عطيني نص الرسالة اللي تحب تبعثها.")
+                return
+            }
+            val sendIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:$phone")).apply {
+                putExtra("sms_body", body)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            if (sendIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(sendIntent)
+                say("حضرتلك الرسالة. راجع الرقم والكلام واضغط إرسال كي تتأكد.")
+            } else {
+                say("ما لقيتش تطبيق رسائل في هاتفك.")
+            }
+            return
+        }
         val targets = listOf(
             listOf("واتساب", "whatsapp") to "com.whatsapp",
             listOf("فيسبوك", "facebook") to "com.facebook.katana",

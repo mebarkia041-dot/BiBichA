@@ -22,7 +22,7 @@ button{border:0;border-radius:24px;padding:0 16px;background:#8b5cf6;color:#fff;
 </style></head>
 <body><main class="app">
 <header><h1>💜 BiBichA</h1><p>بيبيشا • سارة • وحيدتي</p></header>
-<div class="toolbar"><button type="button" id="install" hidden>📲 تثبيت بيبيشا</button><button type="button" id="voice">🎙️ تحدث</button><button type="button" id="speak">🔊 قراءة الرد</button><button type="button" id="autoVoice">🔈 الصوت التلقائي: متوقف</button><button type="button" id="clear">مسح المحادثة</button></div>
+<div class="toolbar"><button type="button" id="install" hidden>📲 تثبيت بيبيشا</button><button type="button" id="voice">🎙️ تحدث</button><button type="button" id="speak">🔊 قراءة الرد</button><button type="button" id="autoVoice">🔈 الصوت التلقائي: متوقف</button><button type="button" id="memoryBtn">🧠 الذاكرة</button><button type="button" id="clear">مسح المحادثة</button></div>
 <section id="messages" aria-live="polite"></section>
 <form id="chat"><input id="entry" placeholder="اكتب رسالتك هنا..." autocomplete="off" required><button type="submit">إرسال</button></form>
 <div class="note">تحفظ المحادثة على هذا الهاتف. دون إعداد الخادم الآمن، تعمل بيبيشا بالردود التجريبية؛ بعد ربط الخادم تتحدث معك بالذكاء الاصطناعي عبر الإنترنت.</div>
@@ -41,7 +41,16 @@ function refreshVoiceButton(){autoVoiceBtn.textContent=autoVoice?'🔊 الصو�
 refreshVoiceButton();
 function say(text){if(!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(text);u.lang='ar-DZ';u.rate=.94;u.pitch=1.08;speechSynthesis.cancel();speechSynthesis.speak(u);}
 autoVoiceBtn.addEventListener('click',()=>{autoVoice=!autoVoice;localStorage.setItem('bibicha-auto-voice',autoVoice?'1':'0');refreshVoiceButton();if(autoVoice)say('الصوت التلقائي راه يخدم الآن ❤️');});
-function rememberFromMessage(value){const q=value.trim();if(/^(تذكر|احفظ|خلي في بالك|ما تنساش)/.test(q)){const fact=q.replace(/^(تذكر|احفظ|خلي في بالك|ما تنساش)[:، ]*/,'').trim();if(fact){memory.facts=[...memory.facts.filter(x=>x!==fact),fact].slice(-30);localStorage.setItem('bibicha-memory',JSON.stringify(memory));}}}
+function saveMemory(){try{localStorage.setItem('bibicha-memory',JSON.stringify(memory));}catch(e){}}
+function rememberFromMessage(value){
+ const q=value.trim();
+ if(/^(احذف الذاكرة|امسح الذاكرة|انسى كل ما حفظت)/.test(q)){memory={facts:[]};saveMemory();return 'تم مسح المعلومات المحفوظة من هذا الهاتف.';}
+ if(/^(تذكر|احفظ|خلي في بالك|ما تنساش)/.test(q)){
+  const fact=q.replace(/^(تذكر|احفظ|خلي في بالك|ما تنساش)[:، ]*/,'').trim();
+  if(fact){memory.facts=[...memory.facts.filter(x=>x!==fact),fact].slice(-30);saveMemory();return 'حفظت هذي المعلومة في ذاكرتي على هذا الهاتف ❤️';}
+ }
+ return '';
+}
 function add(role,text,save=true){const m=document.createElement('div');m.className='msg '+role;m.textContent=text;box.appendChild(m);box.scrollTop=box.scrollHeight;if(save){history.push({role,text});try{localStorage.setItem('bibicha-chat',JSON.stringify(history.slice(-100)));}catch(e){}}if(role==='bot'&&autoVoice)say(text);}
 function reply(q){const s=q.toLowerCase();if(/سلام|salam|مرحبا|bonjour/.test(s))return 'وعليكم السلام ❤️ أنا بيبيشا، راني هنا معاك.';if(/اسمك|شكون|من انت/.test(s))return 'أنا بيبيشا، وتقدر تناديني سارة أو وحيدتي 💜';if(/شكرا|merci/.test(s))return 'بلا مزية يا الغالي ❤️';if(/كيف حالك|واش راكي/.test(s))return 'لاباس الحمد لله، وفرحانة نهدر معاك 😊';if(/نحبك|احبك/.test(s))return 'كلامك حنون ❤️ أنا هنا باش نعاونك ونسمعلك.';return 'وصلتني رسالتك ❤️ حالياً هذي نسخة أولية بردود بسيطة دون إنترنت. الذكاء الاصطناعي الحقيقي مازال يحتاج ربط آمن بخدمة API.';}
 if(history.length){history.forEach(x=>add(x.role,x.text,false));}else add('bot','سلام ❤️ أنا بيبيشا. اكتبلّي واش حاب، ونبدأو مع بعض.');
@@ -49,8 +58,9 @@ form.addEventListener('submit',async e=>{
  e.preventDefault();
  const v=entry.value.trim();if(!v)return;
  const previous=history.slice(-12);
- rememberFromMessage(v);
+ const memoryNotice=rememberFromMessage(v);
  add('user',v);entry.value='';
+ if(memoryNotice){add('bot',memoryNotice);return;}
  const send=form.querySelector('button[type="submit"]');send.disabled=true;send.textContent='...';
  try{
    const endpoint=window.BIBICHA_API_URL||'';
@@ -64,6 +74,11 @@ form.addEventListener('submit',async e=>{
  finally{send.disabled=false;send.textContent='إرسال';entry.focus();}
 });
 document.getElementById('clear').addEventListener('click',()=>{history=[];localStorage.removeItem('bibicha-chat');box.innerHTML='';add('bot','رجعنا صفحة جديدة ❤️ ذاكرتي المحفوظة تبقى. أنا بيبيشا، واش نحكيو اليوم؟');});
+document.getElementById('memoryBtn').addEventListener('click',()=>{
+ const facts=memory.facts.length?memory.facts.map((x,i)=>(i+1)+'. '+x).join('\\n'):'مازال ما حفظتش حتى معلومة.';
+ const action=confirm('ذاكرة بيبيشا (محفوظة على هذا الهاتف):\\n\\n'+facts+'\\n\\nاضغط موافق لمسح الذاكرة كاملة، أو إلغاء للاحتفاظ بها.');
+ if(action){memory={facts:[]};saveMemory();add('bot','مسحت الذاكرة المحفوظة من هذا الهاتف.');}
+});
 document.getElementById('speak').addEventListener('click',()=>{const last=[...box.querySelectorAll('.bot')].pop();if(last)say(last.textContent);});
 document.getElementById('voice').addEventListener('click',()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){add('bot','التعرف على الصوت غير مدعوم في هذا المتصفح. استعمل الكتابة حالياً.');return;}const r=new SR();r.lang='ar-DZ';r.onresult=e=>{entry.value=e.results[0][0].transcript;form.requestSubmit();};r.onerror=()=>add('bot','ما قدرتش نسمعك. جرّب مرة أخرى أو اكتب رسالتك.');r.start();});
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));

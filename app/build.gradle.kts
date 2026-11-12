@@ -15,6 +15,14 @@ android {
         versionName = "1.0.2"
     }
 
+    buildTypes {
+        getByName("release") {
+            // CI-signed test release; production signing requires a persistent private keystore.
+            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

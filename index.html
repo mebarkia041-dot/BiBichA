@@ -44,7 +44,7 @@ async function checkBackend(){
  const status=document.getElementById('connection');
  if(!endpoint){status.textContent='حالة الاتصال: الذكاء الاصطناعي غير مربوط بعد';return;}
  try{
-  const healthUrl=endpoint.replace(/\\/chat\\/?$/,'/health');
+  const healthUrl=endpoint.replace(/\/chat\/?$/,'/health');
   const res=await fetch(healthUrl,{method:'GET',cache:'no-store'});
   const data=await res.json();
   status.textContent=res.ok&&data.configured?'حالة الاتصال: خادم بيبيشا جاهز ❤️':'حالة الاتصال: الخادم موجود لكن مفتاح API غير مضبوط';

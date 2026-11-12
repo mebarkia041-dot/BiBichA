@@ -4,6 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import java.net.URI
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -23,10 +24,21 @@ object SecureConfig {
     private const val NOTIFICATION_READING_KEY = "notification_reading_enabled"
     private const val DEFAULT_WORKER_URL = "https://bibicha.mebarkia041.workers.dev"
 
+    fun isValidWorkerUrl(value: String): Boolean {
+        return try {
+            val uri = URI(value.trim().trimEnd('/'))
+            uri.scheme.equals("https", ignoreCase = true) &&
+                uri.host?.endsWith(".workers.dev", ignoreCase = true) == true &&
+                uri.rawUserInfo == null && uri.port == -1 &&
+                (uri.rawPath.isNullOrEmpty() || uri.rawPath == "/") &&
+                uri.rawQuery == null && uri.rawFragment == null
+        } catch (_: Exception) { false }
+    }
+
     fun save(context: Context, workerUrl: String, token: String) {
         val normalizedUrl = workerUrl.trim().trimEnd('/')
-        require(normalizedUrl.startsWith("https://") && normalizedUrl.endsWith(".workers.dev")) {
-            "رابط خادم إميليا غير صالح."
+        require(isValidWorkerUrl(normalizedUrl)) {
+            "رابط خادم إميليا غير صالح. استعمل عنوان Workers.dev فقط دون مسار إضافي."
         }
         require(token.trim().length >= 32) { "رمز الربط يجب أن يكون 32 حرفاً على الأقل." }
         val encrypted = encrypt(token.trim())

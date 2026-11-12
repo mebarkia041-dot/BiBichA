@@ -50,7 +50,12 @@ export default {
       if (new TextEncoder().encode(rawBody).byteLength > 64000) {
         return Response.json({ error: "الطلب كبير بزاف." }, { status: 413, headers });
       }
-      const body = JSON.parse(rawBody);
+      let body;
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        return Response.json({ error: "محتوى الطلب غير صالح؛ أعد المحاولة." }, { status: 400, headers });
+      }
       const message = String(body.message || "").trim();
       const history = Array.isArray(body.history) ? body.history.slice(-12) : [];
       const memory = Array.isArray(body.memory)

@@ -161,7 +161,7 @@ class MainActivity : Activity() {
             text = "مسح ذاكرة المحادثة المحلية"
             setOnClickListener {
                 SecureConfig.clearHistory(this@MainActivity)
-                chatLog.text = "تم مسح المحادثة. نبدأو من جديد 💜"
+                chatLogView?.text = "تم مسح المحادثة. نبدأو من جديد 💜"
                 Toast.makeText(this@MainActivity, "تم مسح سجل المحادثة المحفوظ على الهاتف.", Toast.LENGTH_LONG).show()
             }
         }

@@ -18,6 +18,7 @@ object SecureConfig {
     private const val URL_KEY = "worker_url"
     private const val TOKEN_KEY = "mobile_token_encrypted"
     private const val HISTORY_KEY = "conversation_history_encrypted"
+    private const val MEMORY_KEY = "personal_memory_encrypted"
     private const val EMERGENCY_NUMBER_KEY = "emergency_number_encrypted"
 
     fun save(context: Context, workerUrl: String, token: String) {
@@ -63,6 +64,28 @@ object SecureConfig {
 
     fun clearHistory(context: Context) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(HISTORY_KEY).apply()
+    }
+
+    fun memories(context: Context): JSONArray {
+        val encoded = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(MEMORY_KEY, null) ?: return JSONArray()
+        return try { JSONArray(decrypt(encoded)) } catch (_: Exception) { JSONArray() }
+    }
+
+    fun addMemory(context: Context, value: String) {
+        val cleaned = value.trim().take(500)
+        require(cleaned.length >= 2) { "اكتب معلومة واضحة للحفظ." }
+        val items = memories(context)
+        if ((0 until items.length()).any { items.optString(it).equals(cleaned, ignoreCase = true) }) return
+        items.put(cleaned)
+        val trimmed = JSONArray()
+        val start = (items.length() - 30).coerceAtLeast(0)
+        for (index in start until items.length()) trimmed.put(items.getString(index))
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(MEMORY_KEY, encrypt(trimmed.toString())).apply()
+    }
+
+    fun clearMemories(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(MEMORY_KEY).apply()
     }
 
     fun saveEmergencyNumber(context: Context, number: String) {

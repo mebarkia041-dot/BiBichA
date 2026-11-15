@@ -64,7 +64,7 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
             return
         }
         if (context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            say("اسمح لبيبيشا باستعمال الميكروفون من إعدادات التطبيق أولاً.")
+            say("اسمح لإميليا باستعمال الميكروفون من إعدادات التطبيق أولاً.")
             return
         }
         startListening()
@@ -240,17 +240,17 @@ class BibichaVoiceInteractionSession(context: android.content.Context) : VoiceIn
             say("نفتحلك الإعدادات.")
             return
         }
-        askBiBichA(raw)
+        askEmilia(raw)
     }
 
-    private fun askBiBichA(message: String) {
+    private fun askEmilia(message: String) {
         val worker = SecureConfig.workerUrl(context)
         val token = try { SecureConfig.token(context) } catch (_: Exception) { "" }
         if (worker.isBlank() || token.isBlank()) {
             say("باش نهدر معاك بالذكاء الحقيقي، لازم تكمل إعداد رابط الخادم ورمز الربط في تطبيق إميليا.")
             return
         }
-        statusView?.text = "بيبيشا راهي تفكر..."
+        statusView?.text = "إميليا راهي تفكر..."
         Thread {
             var connection: HttpURLConnection? = null
             try {

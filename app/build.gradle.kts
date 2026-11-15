@@ -11,13 +11,14 @@ android {
         applicationId = "com.emilia.assistant"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.0.7"
+        versionCode = 9
+        versionName = "1.0.8"
     }
 
     buildTypes {
         getByName("release") {
-            // CI debug signing is for sideload testing only; production release needs a private persistent keystore.
+            // Sideload test build only. A production Play Store release must use a private,
+            // persistent signing key that is never committed to this repository.
             signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
         }

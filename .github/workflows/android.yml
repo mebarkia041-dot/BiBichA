@@ -54,16 +54,12 @@ jobs:
           $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose "$APK"
           sha256sum "$APK"
 
-      - name: Upload verified APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Emilia-Android-1.0.9-Install-Tested
-          path: app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
-          retention-days: 30
-
       - name: Install and launch on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          # Android Emulator 37 on GitHub's Ubuntu 26.04 runner has no KVM.
+          # Explicitly allow the emulator's software CPU translator.
+          ANDROID_I_WANT_MY_TCG: "yes"
         with:
           api-level: 35
           target: google_apis
@@ -80,4 +76,13 @@ jobs:
             sleep 5
             adb shell pidof com.emilia.assistant
             adb logcat -d -t 300 | grep -E 'FATAL EXCEPTION|AndroidRuntime' && exit 1 || true
+
+
+      - name: Upload verified APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Emilia-Android-1.0.9-Install-Tested
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
 

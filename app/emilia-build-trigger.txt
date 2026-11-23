@@ -1,1 +1,1 @@
-Trigger verified release APK rebuild; confirm package com.emilia.assistant version 1.0.2.
+Trigger a fresh verified Emilia APK build for package com.emilia.assistant, versionCode 9, versionName 1.0.8. Confirm signature, Android compatibility, emulator install and launch.

@@ -69,9 +69,15 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_2
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          disable-animations: true
           script: |
+            set -euo pipefail
+            adb devices -l
             adb install -r app/build/outputs/apk/release/app-release.apk
             adb shell monkey -p com.emilia.assistant 1
             sleep 5
             adb shell pidof com.emilia.assistant
+            adb logcat -d -t 300 | grep -E 'FATAL EXCEPTION|AndroidRuntime' && exit 1 || true
 

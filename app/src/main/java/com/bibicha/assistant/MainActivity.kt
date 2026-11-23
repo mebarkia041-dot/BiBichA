@@ -40,15 +40,35 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         chatTts = TextToSpeech(this) { result ->
             if (result == TextToSpeech.SUCCESS) {
-                val arabic = chatTts?.setLanguage(Locale("ar", "DZ")) ?: TextToSpeech.LANG_NOT_SUPPORTED
-                val language = if (arabic < TextToSpeech.LANG_AVAILABLE) chatTts?.setLanguage(Locale("ar")) ?: TextToSpeech.LANG_NOT_SUPPORTED else arabic
-                chatTtsReady = language >= TextToSpeech.LANG_AVAILABLE
-                if (chatTtsReady) {
-                    pendingChatSpeech?.let { pending ->
-                        chatTts?.speak(pending, TextToSpeech.QUEUE_FLUSH, null, "bibicha-chat-reply")
-                        pendingChatSpeech = null
+                val engine = chatTts
+                chatTtsReady = false
+                if (engine != null) {
+                    // Try Algerian Arabic first, then standard Arabic. Some Android TTS
+                    // engines do not expose the DZ locale but do support Arabic generally.
+                    for (locale in listOf(Locale("ar", "DZ"), Locale("ar"))) {
+                        val availability = try {
+                            engine.setLanguage(locale)
+                        } catch (_: Exception) {
+                            TextToSpeech.LANG_NOT_SUPPORTED
+                        }
+                        if (availability >= TextToSpeech.LANG_AVAILABLE) {
+                            chatTtsReady = true
+                            break
+                        }
+                    }
+                    if (chatTtsReady) {
+                        pendingChatSpeech?.let { pending ->
+                            engine.speak(pending, TextToSpeech.QUEUE_FLUSH, null, "emilia-chat-reply")
+                            pendingChatSpeech = null
+                        }
+                    } else {
+                        runOnUiThread {
+                            chatStatusView?.text = "الصوت العربي غير متوفر في محرك النطق. ثبّت بيانات الصوت العربي من إعدادات الهاتف."
+                        }
                     }
                 }
+            } else {
+                chatTtsReady = false
             }
         }
         val title = TextView(this).apply {
@@ -339,6 +359,15 @@ class MainActivity : Activity() {
     }
 
     private fun createReminder() {
+        // Android 13+ blocks reminder notifications until the user grants this permission.
+        // Ask before scheduling so we do not claim a reminder was created when it cannot notify.
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+            Toast.makeText(this, "اسمح بإشعارات إميليا، ثم اضغط على إنشاء تذكير مرة أخرى.", Toast.LENGTH_LONG).show()
+            return
+        }
         val input = EditText(this).apply {
             hint = "مثلاً: موعد الطبيب أو شرب الماء"
             setSingleLine(true)
@@ -391,11 +420,6 @@ class MainActivity : Activity() {
                                     whenToRemind.timeInMillis,
                                     pending
                                 )
-                                if (Build.VERSION.SDK_INT >= 33 &&
-                                    checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
-                                }
                                 val formatted = java.text.SimpleDateFormat("yyyy/MM/dd - HH:mm", Locale.getDefault())
                                     .format(whenToRemind.time)
                                 Toast.makeText(this, "تم ضبط التذكير: $formatted 💜", Toast.LENGTH_LONG).show()
@@ -776,6 +800,13 @@ class MainActivity : Activity() {
                 startVoiceInput()
             } else {
                 chatStatusView?.text = "الميكروفون ما تفعلش. تقدر تسمح به من إعدادات التطبيق."
+            }
+        }
+        if (requestCode == REQUEST_NOTIFICATIONS) {
+            if (grantResults.any { it == android.content.pm.PackageManager.PERMISSION_GRANTED }) {
+                Toast.makeText(this, "الإشعارات تفعّلت. عاود إنشاء التذكير الآن.", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, "بلا إذن الإشعارات، تذكيرات إميليا ما تقدرش تظهر.", Toast.LENGTH_LONG).show()
             }
         }
     }

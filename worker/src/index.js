@@ -110,6 +110,8 @@ export default {
       if (!answer) return Response.json({ error: "ما وصلنيش رد. عاود المحاولة." }, { status: 502, headers });
       return Response.json({ reply: answer }, { headers });
     } catch (error) {
+      // Keep provider diagnostics in Actions/Worker logs without exposing them to clients.
+      console.error("Emilia provider failure:", error?.name || "Error", error?.message || "unknown");
       const timedOut = error?.name === "TimeoutError" || error?.name === "AbortError";
       return Response.json(
         { error: timedOut ? "خدمة الذكاء الاصطناعي تأخرت. عاود المحاولة." : "صار خطأ في الخادم. عاود بعد لحظة." },

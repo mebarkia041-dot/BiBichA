@@ -27,6 +27,7 @@ class VoiceHomeActivity : Activity() {
     private var recognizer: SpeechRecognizer? = null
     private var speaker: TextToSpeech? = null
     private var speakerReady = false
+    private var pendingSpeech: String? = null
     private lateinit var status: TextView
     private lateinit var orb: EmiliaOrbView
     private val main = Handler(Looper.getMainLooper())
@@ -41,6 +42,12 @@ class VoiceHomeActivity : Activity() {
                 val candidates = listOf(Locale("ar", "DZ"), Locale("ar"))
                 speakerReady = candidates.any { locale ->
                     (speaker?.setLanguage(locale) ?: TextToSpeech.LANG_NOT_SUPPORTED) >= TextToSpeech.LANG_AVAILABLE
+                }
+                if (speakerReady) {
+                    pendingSpeech?.let { queued ->
+                        pendingSpeech = null
+                        speak(queued)
+                    }
                 }
             }
         }
@@ -278,7 +285,11 @@ class VoiceHomeActivity : Activity() {
     }
 
     private fun speak(message: String) {
-        if (speakerReady) speaker?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "emilia-voice-reply")
+        if (!speakerReady) {
+            pendingSpeech = message
+            return
+        }
+        speaker?.speak(message, TextToSpeech.QUEUE_FLUSH, null, "emilia-voice-reply")
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

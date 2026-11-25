@@ -104,8 +104,11 @@ class VoiceHomeActivity : Activity() {
         root.addView(hint, LinearLayout.LayoutParams(-1, 42))
 
         val settings = Button(this).apply {
-            text = "☰  الإعدادات والذاكرة والربط"
-            setOnClickListener { startActivity(Intent(this@VoiceHomeActivity, MainActivity::class.java)) }
+            text = "☰"
+            textSize = 24f
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.TRANSPARENT)
+            setOnClickListener { startActivity(Intent(this@VoiceHomeActivity, EmiliaMenuActivity::class.java)) }
         }
         root.addView(settings, LinearLayout.LayoutParams(-1, 52))
 

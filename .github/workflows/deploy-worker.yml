@@ -1,13 +1,23 @@
 name: Deploy Emilia AI Worker
 on:
   workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "worker/**"
+      - ".github/workflows/deploy-worker.yml"
 
 permissions:
   contents: read
 
+concurrency:
+  group: emilia-worker-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -15,26 +25,34 @@ jobs:
           node-version: "22"
       - name: Test Worker
         working-directory: worker
+        run: npm test
+      - name: Check Cloudflare credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          MOBILE_APP_TOKEN: ${{ secrets.MOBILE_APP_TOKEN }}
         run: |
-          npm test
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing GitHub secret CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing GitHub secret CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+          test -n "$MOBILE_APP_TOKEN" || { echo "Missing GitHub secret MOBILE_APP_TOKEN"; exit 1; }
+          test "${#MOBILE_APP_TOKEN}" -ge 32 || { echo "MOBILE_APP_TOKEN must be at least 32 characters"; exit 1; }
       - name: Deploy Worker to Cloudflare
         working-directory: worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing GitHub secret CLOUDFLARE_API_TOKEN"; exit 1; }
-          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing GitHub secret CLOUDFLARE_ACCOUNT_ID"; exit 1; }
-          npx --yes wrangler@4 deploy
+        run: npx --yes wrangler@4 deploy
       - name: Configure mobile app token
         working-directory: worker
         env:
           MOBILE_APP_TOKEN: ${{ secrets.MOBILE_APP_TOKEN }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: printf '%s' "$MOBILE_APP_TOKEN" | npx --yes wrangler@4 secret put MOBILE_APP_TOKEN
+      - name: Verify live AI Worker and mobile authentication
+        env:
+          MOBILE_APP_TOKEN: ${{ secrets.MOBILE_APP_TOKEN }}
         run: |
-          test -n "$MOBILE_APP_TOKEN" || { echo "Missing GitHub secret MOBILE_APP_TOKEN"; exit 1; }
-          printf '%s' "$MOBILE_APP_TOKEN" | npx --yes wrangler@4 secret put MOBILE_APP_TOKEN
-      - name: Verify deployed Worker health
-        run: |
-          curl --fail --silent --show-error https://bibicha.mebarkia041.workers.dev/health
+          health="$(curl --fail --silent --show-error https://bibicha.mebarkia041.workers.dev/health)"
+          printf '%s' "$health" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s);if(v.configured!==true){console.error("Worker health is not configured:",s);process.exit(1)}console.log("Worker health configured:",s)})'
+          curl --fail --silent --show-error -H "Authorization: Bearer $MOBILE_APP_TOKEN" https://bibicha.mebarkia041.workers.dev/auth-check

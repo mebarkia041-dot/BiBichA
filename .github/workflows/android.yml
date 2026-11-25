@@ -59,11 +59,19 @@ jobs:
           $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose "$APK"
           sha256sum "$APK"
 
+      # Preserve the installable APK even if GitHub's hosted emulator cannot boot.
+      # Emulator testing remains a separate required check and is not reported as passed.
+      - name: Upload built APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Emilia-Android-1.1.0-Built
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Install and launch on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         env:
-          # Android Emulator 37 on GitHub's Ubuntu 26.04 runner has no KVM.
-          # Explicitly allow the emulator's software CPU translator.
           ANDROID_I_WANT_MY_TCG: "yes"
         with:
           api-level: 35
@@ -85,13 +93,3 @@ jobs:
               printf '%s\\n' "$LOGCAT" | grep -A 30 -B 10 "FATAL EXCEPTION" || true
               exit 1
             fi
-
-
-      - name: Upload verified APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Emilia-Android-1.1.0-Install-Tested
-          path: app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
-          retention-days: 30
-

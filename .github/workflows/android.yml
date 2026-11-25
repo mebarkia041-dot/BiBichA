@@ -81,8 +81,8 @@ jobs:
             sleep 5
             adb shell pidof com.emilia.assistant
             LOGCAT="$(adb logcat -d -t 500)"
-            if grep -q "FATAL EXCEPTION" <<< "$LOGCAT"; then
-              echo "$LOGCAT" | grep -A 30 -B 10 "FATAL EXCEPTION" || true
+            if printf '%s\\n' "$LOGCAT" | grep -q "FATAL EXCEPTION"; then
+              printf '%s\\n' "$LOGCAT" | grep -A 30 -B 10 "FATAL EXCEPTION" || true
               exit 1
             fi
 

@@ -167,17 +167,58 @@ class VoiceHomeActivity : Activity() {
 
     private fun handlePhrase(phrase: String) {
         val normalized = phrase.lowercase(Locale.ROOT)
-        if (normalized.contains("يوتيوب") || normalized.contains("youtube")) {
-            val launch = packageManager.getLaunchIntentForPackage("com.google.android.youtube")
+
+        // Open common apps through Android's launch intents. These actions stay
+        // on-device and never need a cloud request or extra permissions.
+        val appTargets = listOf(
+            listOf("يوتيوب", "youtube") to ("com.google.android.youtube" to "يوتيوب"),
+            listOf("واتساب", "whatsapp") to ("com.whatsapp" to "واتساب"),
+            listOf("فيسبوك", "facebook") to ("com.facebook.katana" to "فيسبوك"),
+            listOf("انستغرام", "إنستغرام", "instagram") to ("com.instagram.android" to "إنستغرام"),
+            listOf("كروم", "chrome", "google chrome") to ("com.android.chrome" to "كروم"),
+            listOf("خرائط", "google maps", "maps") to ("com.google.android.apps.maps" to "خرائط Google"),
+            listOf("جيميل", "gmail") to ("com.google.android.gm" to "Gmail")
+        )
+        val target = appTargets.firstOrNull { entry -> entry.first.any { normalized.contains(it) } }
+        if (target != null) {
+            val (packageName, label) = target.second
+            val launch = packageManager.getLaunchIntentForPackage(packageName)
             if (launch != null) {
                 startActivity(launch)
-                speak("حاضر، نفتحلك يوتيوب.")
-            } else speak("تطبيق يوتيوب ما لقيتوش في هاتفك.")
+                speak("حاضر، نفتحلك $label.")
+            } else {
+                speak("تطبيق $label ما لقيتوش مثبت في هاتفك.")
+            }
             return
         }
-        if (normalized.contains("الإعدادات") || normalized.contains("اعدادات")) {
+
+        if (normalized.contains("إعدادات الهاتف") || normalized.contains("اعدادات الهاتف")) {
+            startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
+            speak("نفتحلك إعدادات الهاتف.")
+            return
+        }
+        if (normalized.contains("إعدادات إميليا") || normalized.contains("اعدادات إميليا") ||
+            normalized.contains("إعدادات") || normalized.contains("اعدادات")) {
             startActivity(Intent(this, MainActivity::class.java))
             speak("نفتحلك إعدادات إميليا.")
+            return
+        }
+        if (normalized.contains("الكاميرا") || normalized.contains("كاميرا") || normalized.contains("camera")) {
+            val camera = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+            if (camera.resolveActivity(packageManager) != null) startActivity(camera)
+            else speak("ما قدرتش نفتح الكاميرا في هاتفك.")
+            return
+        }
+        if (normalized.contains("اتصل") || normalized.contains("الهاتف") || normalized.contains("مكالمات")) {
+            val dialer = Intent(Intent.ACTION_DIAL)
+            if (dialer.resolveActivity(packageManager) != null) startActivity(dialer)
+            else speak("تطبيق الهاتف غير متاح.")
+            return
+        }
+        if (normalized.contains("رسائل") || normalized.contains("الرسائل") || normalized.contains("messages")) {
+            val messages = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MESSAGING)
+            if (messages.resolveActivity(packageManager) != null) startActivity(messages)
+            else speak("تطبيق الرسائل غير متاح.")
             return
         }
         askCloudAssistant(phrase)

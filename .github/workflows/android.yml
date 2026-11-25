@@ -75,7 +75,11 @@ jobs:
             adb shell monkey -p com.emilia.assistant 1
             sleep 5
             adb shell pidof com.emilia.assistant
-            adb logcat -d -t 300 | grep -E 'FATAL EXCEPTION|AndroidRuntime' && exit 1 || true
+            LOGCAT="$(adb logcat -d -t 500)"
+            if grep -q "FATAL EXCEPTION" <<< "$LOGCAT"; then
+              echo "$LOGCAT" | grep -A 30 -B 10 "FATAL EXCEPTION" || true
+              exit 1
+            fi
 
 
       - name: Upload verified APK

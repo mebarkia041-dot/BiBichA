@@ -149,17 +149,39 @@ object SecureConfig {
             require(isValidWorkerUrl(url) && savedToken.length >= 32) { "إعدادات الربط داخل النسخة غير صالحة." }
         }
         val historyData = data.optJSONArray("history") ?: JSONArray()
+        val safeHistory = JSONArray()
+        for (index in (historyData.length() - 12).coerceAtLeast(0) until historyData.length()) {
+            val item = historyData.optJSONObject(index) ?: continue
+            val role = item.optString("role")
+            val content = item.optString("content").trim()
+            if (role in setOf("user", "assistant") && content.isNotBlank()) {
+                safeHistory.put(JSONObject().put("role", role).put("content", content.take(4000)))
+            }
+        }
+
         val memoryData = data.optJSONArray("memories") ?: JSONArray()
-        val emergency = data.optString("emergencyNumber", "")
+        val safeMemories = JSONArray()
+        val seenMemories = HashSet<String>()
+        for (index in 0 until memoryData.length()) {
+            val value = memoryData.optString(index).trim().take(500)
+            if (value.length >= 2 && seenMemories.add(value.lowercase())) safeMemories.put(value)
+        }
+        val trimmedMemories = JSONArray()
+        val memoryStart = (safeMemories.length() - 30).coerceAtLeast(0)
+        for (index in memoryStart until safeMemories.length()) trimmedMemories.put(safeMemories.getString(index))
+
+        val emergency = data.optString("emergencyNumber", "").trim()
         if (emergency.isNotBlank()) require(emergency.matches(Regex("[+0-9٠-٩]{8,16}"))) { "رقم الطوارئ في النسخة غير صالح." }
 
         val editor = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(URL_KEY, if (isValidWorkerUrl(url)) url.trim().trimEnd('/') else DEFAULT_WORKER_URL)
-            .putString(HISTORY_KEY, encrypt(historyData.toString()))
-            .putString(MEMORY_KEY, encrypt(memoryData.toString()))
+            .putString(HISTORY_KEY, encrypt(safeHistory.toString()))
+            .putString(MEMORY_KEY, encrypt(trimmedMemories.toString()))
             .putBoolean(NOTIFICATION_READING_KEY, data.optBoolean("notificationReadingEnabled", false))
         if (savedToken.isNotBlank()) editor.putString(TOKEN_KEY, encrypt(savedToken))
+        else editor.remove(TOKEN_KEY)
         if (emergency.isNotBlank()) editor.putString(EMERGENCY_NUMBER_KEY, encrypt(emergency))
+        else editor.remove(EMERGENCY_NUMBER_KEY)
         editor.apply()
     }
 

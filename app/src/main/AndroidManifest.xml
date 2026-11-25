@@ -18,13 +18,16 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="false">
         <activity
-            android:name=".MainActivity"
+            android:name=".VoiceHomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
         <service
             android:name=".BibichaVoiceInteractionService"
             android:label="إميليا"

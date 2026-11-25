@@ -1,21 +1,36 @@
-name: BiBichA automated tests
+name: Emilia automated tests
+
 on:
   push:
     branches: ["main"]
+    paths:
+      - "worker/**"
+      - ".github/workflows/tests.yml"
   pull_request:
     branches: ["main"]
+    paths:
+      - "worker/**"
+      - ".github/workflows/tests.yml"
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
-  test:
+  worker-tests:
+    name: Worker security and chat tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: worker
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Node
+
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Run backend security and chat tests
+
+      - name: Run Worker tests
         run: npm test

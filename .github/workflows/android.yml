@@ -48,7 +48,7 @@ jobs:
           test -s "$APK"
           BADGING="$($ANDROID_HOME/build-tools/35.0.0/aapt dump badging "$APK")"
           echo "$BADGING"
-          grep -F "package: name='com.emilia.assistant' versionCode='10' versionName='1.0.9'" <<< "$BADGING"
+          grep -F "package: name='com.emilia.assistant' versionCode='11' versionName='1.1.0'" <<< "$BADGING"
           grep -F "sdkVersion:'26'" <<< "$BADGING"
           grep -F "targetSdkVersion:'35'" <<< "$BADGING"
           $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose "$APK"
@@ -81,7 +81,7 @@ jobs:
       - name: Upload verified APK
         uses: actions/upload-artifact@v4
         with:
-          name: Emilia-Android-1.0.9-Install-Tested
+          name: Emilia-Android-1.1.0-Install-Tested
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
